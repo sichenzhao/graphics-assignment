@@ -7,6 +7,7 @@
 #include "cs488-framework/ShaderProgram.hpp"
 
 #include "grid.hpp"
+#include <vector>
 
 class A1 : public CS488Window {
 public:
@@ -29,6 +30,11 @@ protected:
 
 private:
 	void initGrid();
+        void resetGrid();
+    void buildCube(float x, float y, float z);
+    void buildIndicator(int x_active, int z_active);
+    void drawCube(int x, int y, int z);
+
 
 	// Fields related to the shader and uniforms.
 	ShaderProgram m_shader;
@@ -41,10 +47,28 @@ private:
 	GLuint m_grid_vao; // Vertex Array Object
 	GLuint m_grid_vbo; // Vertex Buffer Object
 
+	// Fields related to cube geometry.
+        GLuint m_cube_vao;
+        GLuint m_cube_vbo;
+        std::pair<int, glm::vec3> **height_map;
+        int flash_helper;
+        int active_z;
+        int active_x;
+        
+        // Fields for indicator
+        GLuint m_indi_vao;
+        GLuint m_indi_vbo;
+
 	// Matrices controlling the camera and projection.
 	glm::mat4 proj;
 	glm::mat4 view;
 
-	float colour[3];
+	float colour[8][3];
 	int current_col;
+
+        // mouse button listener
+        bool m_mouseButtonActive;
+        double m_mouseStartXPos;
+        float m_view_rotation;
+        float m_eye_distance;
 };

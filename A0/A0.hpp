@@ -32,6 +32,7 @@ protected:
 	void uploadTriangleDataToVbo();
 	void mapVboDataToShaderAttributeLocation();
 	void uploadUniformsToShader();
+	void uploadUniformsToShader(float move);
 
 	GLuint m_vao_triangle; // Vertex Array Object
 	GLuint m_vbo_triangle; // Vertex Buffer Object
