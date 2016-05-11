@@ -16,6 +16,7 @@ static const size_t DIM = 5;
 static int xposition = 0;
 static int min_distance = 1;
 static bool shift_pressed = false;
+static bool ctrl_pressed = false;
 static const int flash_frame = 56;
 static const float initial_distance = float(DIM)*2.0*M_SQRT1_2;
 //----------------------------------------------------------------------------------------
@@ -546,7 +547,7 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                     // Assume only copy if the new position is empty
                     if(shift_pressed && height_map[active_x-1][active_z].first==0) {
                         height_map[active_x-1][active_z] = height_map[active_x][active_z];
-                    } else {
+                    } else if (ctrl_pressed){
                         height_map[active_x-1][active_z] = height_map[active_x][active_z];
                         height_map[active_x][active_z].first = 0;
                     }
@@ -560,7 +561,7 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                     // Assume only copy if the new position is empty
                     if(shift_pressed && height_map[active_x+1][active_z].first==0) {
                         height_map[active_x+1][active_z] = height_map[active_x][active_z];
-                    } else {
+                    } else if (ctrl_pressed){
                         height_map[active_x+1][active_z] = height_map[active_x][active_z];
                         height_map[active_x][active_z].first = 0;
                     }
@@ -574,7 +575,7 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                     // Assume only copy if the new position is empty
                     if(shift_pressed && height_map[active_x][active_z-1].first==0) {
                         height_map[active_x][active_z-1] = height_map[active_x][active_z];
-                    } else {
+                    } else if (ctrl_pressed){
                         height_map[active_x][active_z-1] = height_map[active_x][active_z];
                         height_map[active_x][active_z].first = 0;
                     }
@@ -588,7 +589,7 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                     // Assume only copy if the new position is empty
                     if(shift_pressed && height_map[active_x][active_z+1].first==0) {
                         height_map[active_x][active_z+1] = height_map[active_x][active_z];
-                    } else {
+                    } else if (ctrl_pressed){
                         height_map[active_x][active_z+1] = height_map[active_x][active_z];
                         height_map[active_x][active_z].first = 0;
                     }
@@ -601,6 +602,11 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                 shift_pressed = true;
                 eventHandled = true;
             }
+            if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+                cout << "ctrl" << endl;
+                ctrl_pressed = true;
+                eventHandled = true;
+            }
 	}
 
         if( action== GLFW_RELEASE) {
@@ -609,7 +615,11 @@ bool A1::keyInputEvent(int key, int action, int mods) {
                 shift_pressed = false;
                 eventHandled = true;
             }
-        
+            if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
+                cout << "ctrl release" << endl;
+                ctrl_pressed = false;
+                eventHandled = true;
+            }
         }
 
 	return eventHandled;
