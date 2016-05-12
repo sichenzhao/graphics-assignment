@@ -441,7 +441,7 @@ bool A1::mouseMoveEvent(double xPos, double yPos)
 		// rotation amount, and maybe the previous X position (so 
 		// that you can rotate relative to the *change* in X.
                 if(m_mouseButtonActive){
-                    m_view_rotation = 6.283f * (xPos-m_mouseStartXPos)/1000;
+                    m_view_rotation = m_view_rotation + 3 * (xPos-m_mouseStartXPos)/10000;
                 } else {
                     m_mouseStartXPos = xPos;
                 }
