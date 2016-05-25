@@ -11,6 +11,19 @@ using namespace std;
 #include <glm/gtx/io.hpp>
 using namespace glm;
 
+// model coord colour
+static vec3 m_x_colour = vec3(0.0f, 0.5f, 0.5f);
+static vec3 m_y_colour = vec3(0.5f, 0.5f, 0.0f);
+static vec3 m_z_colour = vec3(0.5f, 0.0f, 0.5f);
+
+// world coord colour
+static vec3 w_x_colour = vec3(0.0f, 0.0f, 1.0f);
+static vec3 w_y_colour = vec3(0.0f, 1.0f, 0.0f);
+static vec3 w_z_colour = vec3(1.0f, 0.0f, 0.0f);
+
+// cube line colour
+static vec3 cube_colour = vec3(1.0f, 0.7f, 0.8f);
+
 //----------------------------------------------------------------------------------------
 // Constructor
 VertexData::VertexData()
@@ -193,18 +206,16 @@ void A2::appLogic()
 	// Call at the beginning of frame, before drawing lines:
 	initLineData();
 
-	// Draw outer square:
-	setLineColour(vec3(1.0f, 0.7f, 0.8f));
-	drawLine(vec2(-0.5f, -0.5f), vec2(0.5f, -0.5f));
-	drawLine(vec2(0.5f, -0.5f), vec2(0.5f, 0.5f));
-	drawLine(vec2(0.5f, 0.5f), vec2(-0.5f, 0.5f));
-	drawLine(vec2(-0.5f, 0.5f), vec2(-0.5f, -0.5f));
-
+    // Draw cube:
+    setLineColour(cube_colour);
+    drawLine();
 
 	// Draw inner square:
-	setLineColour(vec3(0.2f, 1.0f, 1.0f));
+	setLineColour(m_x_colour);
 	drawLine(vec2(-0.25f, -0.25f), vec2(0.25f, -0.25f));
+	setLineColour(m_y_colour);
 	drawLine(vec2(0.25f, -0.25f), vec2(0.25f, 0.25f));
+	setLineColour(m_z_colour);
 	drawLine(vec2(0.25f, 0.25f), vec2(-0.25f, 0.25f));
 	drawLine(vec2(-0.25f, 0.25f), vec2(-0.25f, -0.25f));
 }
