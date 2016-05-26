@@ -40,7 +40,24 @@ VertexData::VertexData()
 A2::A2()
 	: m_currentLineColour(vec3(0.0f))
 {
+        m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 0.6f);
+        m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 0.6f);
+        m_3dCube[2] = vec4(-0.6f, 0.6f, -0.6f, 0.6f);
+        m_3dCube[3] = vec4(-0.6f, 0.6f, 0.6f, 0.6f);
+        m_3dCube[4] = vec4(0.6f, -0.6f, 0.6f, 0.6f);
+        m_3dCube[5] = vec4(0.6f, -0.6f, -0.6f, 0.6f);
+        m_3dCube[6] = vec4(-0.6f, -0.6f, -0.6f, 0.6f);
+        m_3dCube[7] = vec4(-0.6f, -0.6f, 0.6f, 0.6f);
 
+        m_modelCoord[0] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        m_modelCoord[1] = vec4(0.5f, 0.0f, 0.0f, 1.0f);
+        m_modelCoord[2] = vec4(0.0f, 0.5f, 0.0f, 1.0f);
+        m_modelCoord[3] = vec4(0.0f, 0.0f, 0.5f, 1.0f);
+        
+        m_worldCoord[0] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        m_worldCoord[1] = vec4(0.7f, 0.0f, 0.0f, 1.0f);
+        m_worldCoord[2] = vec4(0.0f, 0.7f, 0.0f, 1.0f);
+        m_worldCoord[3] = vec4(0.0f, 0.0f, 0.7f, 1.0f);
 }
 
 //----------------------------------------------------------------------------------------
@@ -207,17 +224,49 @@ void A2::appLogic()
 	initLineData();
 
     // Draw cube:
-    setLineColour(cube_colour);
-    drawLine();
+    drawCube();
+    drawWorldCoord();
 
-	// Draw inner square:
-	setLineColour(m_x_colour);
-	drawLine(vec2(-0.25f, -0.25f), vec2(0.25f, -0.25f));
-	setLineColour(m_y_colour);
-	drawLine(vec2(0.25f, -0.25f), vec2(0.25f, 0.25f));
-	setLineColour(m_z_colour);
-	drawLine(vec2(0.25f, 0.25f), vec2(-0.25f, 0.25f));
-	drawLine(vec2(-0.25f, 0.25f), vec2(-0.25f, -0.25f));
+}
+
+void A2::drawCube() {
+    // rotate, scale, then transform m_3dCube
+    setLineColour(cube_colour);
+    for(int i=0; i<4; i++){
+        drawLine_world(m_3dCube[i], m_3dCube[i+4]);
+        if (i==3){
+            drawLine_world(m_3dCube[i], m_3dCube[i-3]);
+            drawLine_world(m_3dCube[i+4], m_3dCube[i+4-3]);
+        }
+        else {
+            drawLine_world(m_3dCube[i], m_3dCube[i+1]);
+            drawLine_world(m_3dCube[i+4], m_3dCube[i+1+4]);
+        }
+    }
+
+    // draw model coordinator
+    setLineColour(m_x_colour);
+    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+    setLineColour(m_y_colour);
+    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+    setLineColour(m_z_colour);
+    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+}
+
+void A2::drawWorldCoord() {
+    setLineColour(w_x_colour);
+    drawLine_world(m_worldCoord[0], m_worldCoord[1]);
+    setLineColour(w_y_colour);
+    drawLine_world(m_worldCoord[0], m_worldCoord[2]);
+    setLineColour(w_z_colour);
+    drawLine_world(m_worldCoord[0], m_worldCoord[3]);
+}
+
+void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
+    // for now, no perspective, just draw x y
+    // cout << "start " << start.x << start.y << endl;
+    // cout << "end " << end.x << end.y << endl;
+    drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
 }
 
 //----------------------------------------------------------------------------------------
@@ -393,6 +442,30 @@ bool A2::keyInputEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+	if( action == GLFW_PRESS ) {
+            // Respond to some key events.
+            if (key == GLFW_KEY_R) {
+                cout << "R key pressed" << endl;
+
+                // reset
+                resetGrid();
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_Q) {
+                cout << "Q key pressed" << endl;
+
+                // quit
+                glfwSetWindowShouldClose(m_window, GL_TRUE);
+
+                eventHandled = true;
+            }
+        }
 
 	return eventHandled;
+}
+
+void A2::resetGrid() {
+    cout << "Reset Cube" << endl;
+    return;
 }

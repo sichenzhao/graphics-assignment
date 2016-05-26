@@ -70,4 +70,15 @@ protected:
 
 	glm::vec3 m_currentLineColour;
 
+        // customized part
+        void resetGrid();
+
+        glm::vec4 m_3dCube[8];
+        glm::vec4 m_modelCoord[4];
+        glm::vec4 m_worldCoord[4];
+
+        void drawCube();
+        void drawWorldCoord();
+
+        void drawLine_world(glm::vec4 start, glm::vec4 end);
 };
