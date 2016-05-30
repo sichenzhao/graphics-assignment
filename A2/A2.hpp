@@ -77,6 +77,20 @@ protected:
         glm::vec4 m_modelCoord[4];
         glm::vec4 m_worldCoord[4];
 
+        glm::mat4 m_MMatrix;
+        glm::mat4 m_MCoordMatrix;
+        glm::mat4 consM(int axis, int action, double val);
+        void updateMMatrix();
+        void updateMMatrixHelper(int key, int mouse);
+
+        bool keyFlags[7];
+        bool mouseFlags[3];
+
+        double m_xPos, m_yPos;
+        double mousePosStarts[3*6 + 1][2];
+        void resetK(const int key);
+        void resetM(const int mouse);
+
         void drawCube();
         void drawWorldCoord();
 

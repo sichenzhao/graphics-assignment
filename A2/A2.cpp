@@ -34,12 +34,37 @@ VertexData::VertexData()
 	colours.reserve(kMaxVertices);
 }
 
+enum {
+    key_O, // rotate view
+    key_N, // translate view
+    key_P, // perspective
+    key_R, // rotate model
+    key_T, // translate model
+    key_S, // scale model
+    key_V  // viewport
+};
+
+enum {
+    m_left, m_middle, m_right
+};
+
+enum {
+    x, y, z, w
+};
+
 
 //----------------------------------------------------------------------------------------
 // Constructor
 A2::A2()
 	: m_currentLineColour(vec3(0.0f))
 {
+        memset(keyFlags, 0, sizeof(bool)*7);
+        memset(mouseFlags, 0, sizeof(bool)*3);
+        memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
+
+        m_MMatrix = mat4(1.0f);
+        m_MCoordMatrix = mat4(1.0f);
+
         m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 0.6f);
         m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 0.6f);
         m_3dCube[2] = vec4(-0.6f, 0.6f, -0.6f, 0.6f);
@@ -219,6 +244,7 @@ void A2::drawLine(
 void A2::appLogic()
 {
 	// Place per frame, application logic here ...
+        updateMMatrix();
 
 	// Call at the beginning of frame, before drawing lines:
 	initLineData();
@@ -231,26 +257,34 @@ void A2::appLogic()
 
 void A2::drawCube() {
     // rotate, scale, then transform m_3dCube
+    vec4 tmp_3dCube[8];
+    for (int i=0; i<8; i++){
+        tmp_3dCube[i] = m_MMatrix * m_3dCube[i];
+    }
     setLineColour(cube_colour);
     for(int i=0; i<4; i++){
-        drawLine_world(m_3dCube[i], m_3dCube[i+4]);
+        drawLine_world(tmp_3dCube[i], tmp_3dCube[i+4]);
         if (i==3){
-            drawLine_world(m_3dCube[i], m_3dCube[i-3]);
-            drawLine_world(m_3dCube[i+4], m_3dCube[i+4-3]);
+            drawLine_world(tmp_3dCube[i], tmp_3dCube[i-3]);
+            drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+4-3]);
         }
         else {
-            drawLine_world(m_3dCube[i], m_3dCube[i+1]);
-            drawLine_world(m_3dCube[i+4], m_3dCube[i+1+4]);
+            drawLine_world(tmp_3dCube[i], tmp_3dCube[i+1]);
+            drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+1+4]);
         }
     }
 
+    vec4 tmp_modelCoord[4];
+    for (int i=0; i<4; i++){
+        tmp_modelCoord[i] = m_MCoordMatrix * m_modelCoord[i];
+    }
     // draw model coordinator
     setLineColour(m_x_colour);
-    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+    drawLine_world(tmp_modelCoord[0], tmp_modelCoord[1]);
     setLineColour(m_y_colour);
-    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+    drawLine_world(tmp_modelCoord[0], tmp_modelCoord[2]);
     setLineColour(m_z_colour);
-    drawLine_world(m_modelCoord[0], m_modelCoord[1]);
+    drawLine_world(tmp_modelCoord[0], tmp_modelCoord[3]);
 }
 
 void A2::drawWorldCoord() {
@@ -357,6 +391,128 @@ void A2::cleanup()
 
 //----------------------------------------------------------------------------------------
 /*
+ * Called once per frame, update MVP matrices respectively.
+ */
+// index of key mouse for mousePosStarts
+int iKM(const int key, const int mouse) {
+    return (key==6) ? 18 : key*3 + mouse;
+}
+
+void A2::resetK(const int key) {
+    for(int i=0; i<3; i++){
+        mousePosStarts[iKM(key, i)][0] = 0;
+        mousePosStarts[iKM(key, i)][1] = 0;
+    }
+}
+
+void A2::resetM(const int mouse) {
+    for(int i=0; i<7; i++){
+        mousePosStarts[iKM(i, mouse)][0] = 0;
+        mousePosStarts[iKM(i, mouse)][1] = 0;
+    }
+}
+
+// construct Matrix for model given axis (x,y,z) and action (R,T,S)
+mat4 A2::consM (int axis, int action, double val){
+    cout << "consM axis action are " << axis << ", " << action << endl;
+    cout << keyFlags[4] << endl;
+    mat4 ret( 1.0f ); // identity matrix
+    if(axis == x){
+        if (action==key_R){
+            ret[1].y = cos(val);
+            ret[1].z = sin(val);
+            ret[2].y = -sin(val);
+            ret[2].z = cos(val);
+            return ret;
+        } else if (action==key_T){
+            ret[3].x = val;
+            return ret;
+        } else if (action==key_S){
+            ret[0].x = (val+1==0?1:val+1);
+            cout << "scale" << val << endl;
+            return ret;
+        }
+    } else if (axis == y) {
+        if (action==key_R){
+            ret[0].x = cos(val);
+            ret[0].z = -sin(val);
+            ret[2].x = sin(val);
+            ret[2].z = cos(val);
+            return ret;
+        } else if (action==key_T){
+            ret[3].y = val;
+            return ret;
+        } else if (action==key_S){
+            ret[1].y = (val==-1?1:val+1);
+            return ret;
+        }
+    } else if (axis == z) {
+        if (action==key_R){
+            ret[0].x = cos(val);
+            ret[0].y = sin(val);
+            ret[1].x = -sin(val);
+            ret[1].y = cos(val);
+            return ret;
+        } else if (action==key_T){
+            ret[3].z = val;
+            return ret;
+        } else if (action==key_S){
+            ret[2].z = (val+1==0?1:val+1);
+            return ret;
+        }
+
+    } else {
+        cout << "error consM getting axis " << axis << endl;
+    }
+    return ret;
+}
+
+void A2::updateMMatrixHelper(int key, int mouse) {
+    cout << "updateMMatrixHelper key, mouse" << key << ", " << mouse << endl;
+    double* startsX = & mousePosStarts[iKM(key, mouse)][0];
+    double* startsY = & mousePosStarts[iKM(key, mouse)][1];
+    if(*startsX==0 && *startsY==0){
+        *startsX = m_xPos;
+        *startsY = m_yPos;
+    } else {
+        double theta = (m_xPos - *startsX)/1000;
+        m_MMatrix = m_MMatrix*consM(mouse, key, theta);
+        m_MCoordMatrix = (key==key_S) ? m_MCoordMatrix : m_MCoordMatrix*consM(mouse, key, theta);
+    }
+}
+
+void A2::updateMMatrix() {
+    // x axis
+    if (mouseFlags[m_left]) {
+        // model rotate
+        if(keyFlags[key_R]){
+            updateMMatrixHelper(key_R, m_left);
+        }
+        // model translate
+        if(keyFlags[key_T]){
+            updateMMatrixHelper(key_T, m_left);
+        }
+        // model scale
+        if(keyFlags[key_S]){
+            updateMMatrixHelper(key_S, m_left);
+        }
+    }
+    // y axis
+    if (mouseFlags[m_middle]) {
+        if(keyFlags[key_R]){
+            updateMMatrixHelper(key_R, m_middle);
+        }
+    }
+    // z axis
+    if (mouseFlags[m_right]) {
+        if(keyFlags[key_R]){
+            updateMMatrixHelper(key_R, m_right);
+        }
+    }
+}
+
+//----------------------------------------------------------------------------------------
+/*
  * Event handler.  Handles cursor entering the window area events.
  */
 bool A2::cursorEnterWindowEvent (
@@ -380,6 +536,11 @@ bool A2::mouseMoveEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+	if (!ImGui::IsMouseHoveringAnyWindow()) {
+            m_xPos = xPos;
+            m_yPos = yPos;
+            cout << "x y is " << xPos << " " << yPos << endl;
+        }
 
 	return eventHandled;
 }
@@ -396,6 +557,46 @@ bool A2::mouseButtonInputEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+	if (!ImGui::IsMouseHoveringAnyWindow()) {
+		// The user clicked in the window.  If it's the left
+		// mouse button, initiate a rotation.
+                if (button == GLFW_MOUSE_BUTTON_LEFT){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_left] = true;
+                            cout << "left mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_left] = false;
+                            resetM(m_left);
+                            cout << "left mouse released" << endl;
+                    }
+                }
+                if (button == GLFW_MOUSE_BUTTON_RIGHT){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_right] = true;
+                            cout << "right mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_right] = false;
+                            cout << "right mouse released" << endl;
+                            resetM(m_right);
+                    }
+                }
+                if (button == GLFW_MOUSE_BUTTON_MIDDLE){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_middle] = true;
+                            cout << "middle mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_middle] = false;
+                            cout << "middle mouse released" << endl;
+                            resetM(m_middle);
+                    }
+                }
+	}
 
 	return eventHandled;
 }
@@ -447,8 +648,32 @@ bool A2::keyInputEvent (
             if (key == GLFW_KEY_R) {
                 cout << "R key pressed" << endl;
 
-                // reset
-                resetGrid();
+                // model rotate
+                keyFlags[key_R] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_T) {
+                cout << "T key pressed" << endl;
+
+                // model translate
+                keyFlags[key_T] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_S) {
+                cout << "S key pressed" << endl;
+
+                // model scale
+                keyFlags[key_S] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_V) {
+                cout << "V key pressed" << endl;
+
+                // viewport
+                keyFlags[key_V] = true;
 
                 eventHandled = true;
             }
@@ -458,6 +683,58 @@ bool A2::keyInputEvent (
                 // quit
                 glfwSetWindowShouldClose(m_window, GL_TRUE);
 
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_A) {
+                cout << "A key pressed" << endl;
+
+                // reset
+                resetGrid();
+
+                eventHandled = true;
+            }
+        }
+	if( action == GLFW_RELEASE ) {
+            if (key == GLFW_KEY_R) {
+                keyFlags[key_R] = false;
+                cout << "R key released" << endl;
+                resetK(key_R);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_T) {
+                keyFlags[key_T] = false;
+                cout << "T key released" << endl;
+                resetK(key_T);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_S) {
+                keyFlags[key_S] = false;
+                cout << "S key released" << endl;
+                resetK(key_S);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_V) {
+                keyFlags[key_V] = false;
+                cout << "V key released" << endl;
+                resetK(key_V);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_O) {
+                keyFlags[key_O] = false;
+                cout << "O key released" << endl;
+                resetK(key_O);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_N) {
+                keyFlags[key_N] = false;
+                cout << "N key released" << endl;
+                resetK(key_N);
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_P) {
+                keyFlags[key_P] = false;
+                cout << "P key released" << endl;
+                resetK(key_P);
                 eventHandled = true;
             }
         }
