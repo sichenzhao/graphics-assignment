@@ -54,6 +54,9 @@ enum {
     x, y, z, w
 };
 
+static double p_theta = 30*M_PI/180;
+static double p_z = 1;
+
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -64,18 +67,23 @@ A2::A2()
         memset(mouseFlags, 0, sizeof(bool)*3);
         memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
 
-        m_viewport[0] = -0.8; 
-        m_viewport[1] = 0.8; 
-        m_viewport[2] = -0.8; 
-        m_viewport[3] = 0.8; 
+        m_width = 768;
+        m_height = 674 ;
+
+        m_viewport[0] = -0.9; 
+        m_viewport[1] = 0.9; 
+        m_viewport[2] = -0.9; 
+        m_viewport[3] = 0.9; 
 
         m_MMatrix = mat4(1.0f);
         m_MCoordMatrix = mat4(1.0f);
 
         m_VMatrix = mat4(1.0f);
-        m_VMatrix[0].x = -1.0f;
-        m_VMatrix = m_VMatrix * consM(z, key_T, 1);
-        m_VMatrix = m_VMatrix * consM(y, key_R, M_PI);
+        m_VMatrix[3].z = 10;
+        m_VMatrix[2].z = -1;
+        m_VMatrix = inverse(m_VMatrix);
+
+        m_PMatrix = mat4(1.0f);
 
         m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 1.0f);
         m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 1.0f);
@@ -112,7 +120,6 @@ void A2::init()
 {
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	glEnable(GL_LINE_SMOOTH);
-
 
 	// Set the background colour.
 	glClearColor(0.3, 0.5, 0.7, 1.0);
@@ -258,6 +265,23 @@ void A2::appLogic()
 	// Place per frame, application logic here ...
         updateMMatrix();
 
+        if(keyFlags[key_V] && mouseFlags[0]){
+            double* V_startX = & mousePosStarts[18][0];
+            double* V_startY = & mousePosStarts[18][1];
+            double rel_xPos = (m_xPos/m_width)*2 -1;
+            double rel_yPos = 1-(m_yPos/m_height)*2;
+            if(*V_startX==0 && *V_startY==0){
+                cout << "V00" << endl;
+                m_viewport[0] = *V_startX = rel_xPos;
+                m_viewport[3] = *V_startY = rel_yPos;
+            } else {
+                m_viewport[0] = std::min(*V_startX, rel_xPos);
+                m_viewport[2] = std::min(*V_startY, rel_yPos);
+                m_viewport[1] = std::max(rel_xPos, *V_startX);
+                m_viewport[3] = std::max(rel_yPos, *V_startY);
+            }
+        }
+
 	// Call at the beginning of frame, before drawing lines:
 	initLineData();
 
@@ -277,9 +301,9 @@ void A2::drawCube() {
     vec4 tmp_3dCube[8];
     for (int i=0; i<8; i++){
         tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_3dCube[i];
-        //tmp_3dCube[i] = m_MMatrix * m_3dCube[i];
     }
     setLineColour(cube_colour);
+    cubeClip(tmp_3dCube);
     for(int i=0; i<4; i++){
         drawLine_world(tmp_3dCube[i], tmp_3dCube[i+4]);
         if (i==3){
@@ -303,6 +327,23 @@ void A2::drawCube() {
     drawLine_world(tmp_modelCoord[0], tmp_modelCoord[2]);
     setLineColour(m_z_colour);
     drawLine_world(tmp_modelCoord[0], tmp_modelCoord[3]);
+}
+
+void A2::cubeClip(vec4 *cube){
+    vec4 eye1 = -cube[0] + vec4(0,0,0,1);
+    vec4 eye2 = -cube[6] + vec4(0,0,0,1);
+
+    //cout << cube[0].x << " " << cube[0].y << " " << cube[0].z << " " << endl;
+
+    bool planeShow[6];
+    planeShow[0] = (dot(eye1,cube[0]-cube[4])>0);
+    planeShow[1] = (dot(eye1,cube[0]-cube[3])>0);
+    planeShow[2] = (dot(eye1,cube[0]-cube[1])>0);
+    planeShow[3] = (dot(eye2,cube[6]-cube[7])>0);
+    planeShow[4] = (dot(eye2,cube[6]-cube[5])>0);
+    planeShow[5] = (dot(eye2,cube[6]-cube[2])>0);
+
+    return;
 }
 
 void A2::drawWorldCoord() {
@@ -343,7 +384,7 @@ bool A2::viewportClipping(float &sx, float &sy, float &ex, float &ey){
     if((oA|oB)!=15) return false;
     if((oA&oB)==15) return true;
     else {
-        cout << oA << " " << oB << endl;
+        // cout << oA << " " << oB << endl;
         oA = ~oA;
         oB = ~oB;
         double t = 0;
@@ -401,10 +442,27 @@ bool A2::viewportClipping(float &sx, float &sy, float &ex, float &ey){
     }
 }
 
+void A2::mapViewport(float &x, float &y){
+    double xl,xr,yt,yb;
+    xl = m_viewport[0];
+    xr = m_viewport[1];
+    yt = m_viewport[2];
+    yb = m_viewport[3];
+    x = (x+1)/2*(xr-xl) + xl;
+    y = (y+1)/2*(yb-yt) + yt;
+    return;
+}
+
 void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
-    // for now, no perspective, just draw x y
     // cout << "start " << start.x << start.y << endl;
     // cout << "end " << end.x << end.y << endl;
+    // 3d clipping
+    if(start.w == -1 || end.w == -1) return;
+    // TODO: perspective
+
+    // map viewport
+    mapViewport(start.x, start.y);
+    mapViewport(end.x, end.y);
     if(viewportClipping(start.x, start.y, end.x, end.y)){
         drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
     }
@@ -522,6 +580,8 @@ void A2::resetM(const int mouse) {
 // construct Matrix for model given axis (x,y,z) and action (R,T,S)
 mat4 A2::consM (int axis, int action, double val){
     mat4 ret( 1.0f ); // identity matrix
+    val = val / 1000;
+    int transAlter = 2;
     if(axis == x){
         if (action==key_R || action==key_O){
             ret[1].y = cos(val);
@@ -530,6 +590,7 @@ mat4 A2::consM (int axis, int action, double val){
             ret[2].z = cos(val);
             return ret;
         } else if (action==key_T || action==key_N){
+            val = val*transAlter;
             ret[3].x = val;
             return ret;
         } else if (action==key_S){
@@ -544,6 +605,7 @@ mat4 A2::consM (int axis, int action, double val){
             ret[2].z = cos(val);
             return ret;
         } else if (action==key_T || action==key_N){
+            val = val*transAlter;
             ret[3].y = val;
             return ret;
         } else if (action==key_S){
@@ -558,6 +620,7 @@ mat4 A2::consM (int axis, int action, double val){
             ret[1].y = cos(val);
             return ret;
         } else if (action==key_T || action==key_N){
+            val = val*transAlter;
             ret[3].z = val;
             return ret;
         } else if (action==key_S){
@@ -579,14 +642,18 @@ void A2::updateMMatrixHelper(int key, int mouse) {
         *startsX = m_xPos;
         *startsY = m_yPos;
     } else {
-        double theta = (m_xPos - *startsX)/1000;
-        mat4 transformM = consM(mouse, key, theta);
         if(key==key_S||key==key_T||key==key_R){
+            double theta = (m_xPos - *startsX);
+            mat4 transformM = consM(mouse, key, theta);
             m_MMatrix = m_MMatrix*transformM;
             m_MCoordMatrix = (key==key_S) ? m_MCoordMatrix : m_MCoordMatrix*transformM;
         } else if(key==key_O || key==key_N) {
-            m_VMatrix = m_VMatrix*transformM;
+            double theta = (m_xPos - *startsX);
+            mat4 transformM = consM(mouse, key, theta);
+            //m_VMatrix = m_VMatrix*transformM;
+            m_VMatrix = inverse(transformM)*m_VMatrix;
         }
+        *startsX = m_xPos;
     }
 }
 
@@ -682,7 +749,7 @@ bool A2::mouseMoveEvent (
 	if (!ImGui::IsMouseHoveringAnyWindow()) {
             m_xPos = xPos;
             m_yPos = yPos;
-            //cout << "x y is " << xPos << " " << yPos << endl;
+            cout << "x y is " << xPos << " " << yPos << endl;
         }
 
 	return eventHandled;
@@ -770,6 +837,7 @@ bool A2::windowResizeEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+        cout << height << "<-h w->" << width << endl;
 
 	return eventHandled;
 }

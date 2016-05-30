@@ -84,19 +84,23 @@ protected:
         void updateMMatrixHelper(int key, int mouse);
 
         glm::mat4 m_VMatrix;
-        glm::vec4 m_ViewOrig;
+
+        glm::mat4 m_PMatrix;
 
         bool keyFlags[7];
         bool mouseFlags[3];
 
         double m_xPos, m_yPos;
+        double m_width, m_height;
         double mousePosStarts[3*6 + 1][2];
         void resetK(const int key);
         void resetM(const int mouse);
 
+        void cubeClip(glm::vec4 *cube);
         void drawCube();
         void drawWorldCoord();
 
+        void mapViewport(float &x, float &y);
         void drawLine_world(glm::vec4 start, glm::vec4 end);
 
         // xl, xr, yt, yb
