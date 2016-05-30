@@ -70,6 +70,9 @@ A2::A2()
         m_width = 768;
         m_height = 674 ;
 
+        m_near = 10;
+        m_far = 20;
+
         m_viewport[0] = -0.9; 
         m_viewport[1] = 0.9; 
         m_viewport[2] = -0.9; 
@@ -464,8 +467,39 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     mapViewport(start.x, start.y);
     mapViewport(end.x, end.y);
     if(viewportClipping(start.x, start.y, end.x, end.y)){
-        drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+        if(nfClipping(start.x, start.y, start.z, end.x, end.y, end.z)){
+            drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+        }
     }
+}
+
+bool A2::nfClipping(float &sx, float &sy, float &sz, float &ex, float &ey, float &ez){
+    if(sz<m_near && ez<m_near) return false;
+    if(sz>m_far && ez>m_far) return false;
+    double t = 0;
+    if(sz<m_near){
+        t = (m_near - sz)/(ez - sz);
+        sy = sy + t*(ey - sy);
+        sx = sx + t*(ex - sx);
+        sz = m_near+eps;
+        return nfClipping(sx,sy,sz,ex,ey,ez);
+    } else if(sz>m_far){
+        t = (m_far - sz)/(ez - sz);
+        sy = sy + t*(ey - sy);
+        sx = sx + t*(ex - sx);
+        sz = m_far-eps;
+    } else if(ez<m_near){
+        t = (m_near - ez)/(sz - ez);
+        ey = ey + t*(sy - ey);
+        ex = ex + t*(sx - ex);
+        ez = m_near + eps;
+    } else if(ez>m_far){
+        t = (m_far - ez)/(sz - ez);
+        ey = ey + t*(sy - ey);
+        ex = ex + t*(sx - ex);
+        ez = m_far - eps;
+    }
+    return true;
 }
 
 //----------------------------------------------------------------------------------------

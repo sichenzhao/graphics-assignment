@@ -106,4 +106,7 @@ protected:
         // xl, xr, yt, yb
         double m_viewport[4];
         bool viewportClipping(float &sx, float &sy, float &ex, float &ey);
+
+        float m_near, m_far;
+        bool nfClipping(float &sx, float &sy, float &sz, float &ex, float &ey, float &ez);
 };
