@@ -11,6 +11,8 @@ using namespace std;
 #include <glm/gtx/io.hpp>
 using namespace glm;
 
+static double eps = 1e-4;
+
 // model coord colour
 static vec3 m_x_colour = vec3(0.0f, 0.5f, 0.5f);
 static vec3 m_y_colour = vec3(0.5f, 0.5f, 0.0f);
@@ -61,6 +63,11 @@ A2::A2()
         memset(keyFlags, 0, sizeof(bool)*7);
         memset(mouseFlags, 0, sizeof(bool)*3);
         memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
+
+        m_viewport[0] = -0.8; 
+        m_viewport[1] = 0.8; 
+        m_viewport[2] = -0.8; 
+        m_viewport[3] = 0.8; 
 
         m_MMatrix = mat4(1.0f);
         m_MCoordMatrix = mat4(1.0f);
@@ -258,6 +265,11 @@ void A2::appLogic()
     drawCube();
     drawWorldCoord();
 
+    // Draw viewport
+    drawLine(vec2(m_viewport[0],m_viewport[2]), vec2(m_viewport[0],m_viewport[3]));
+    drawLine(vec2(m_viewport[0],m_viewport[2]), vec2(m_viewport[1],m_viewport[2]));
+    drawLine(vec2(m_viewport[1],m_viewport[2]), vec2(m_viewport[1],m_viewport[3]));
+    drawLine(vec2(m_viewport[0],m_viewport[3]), vec2(m_viewport[1],m_viewport[3]));
 }
 
 void A2::drawCube() {
@@ -306,11 +318,96 @@ void A2::drawWorldCoord() {
     drawLine_world(tmp_worldCoord[0], tmp_worldCoord[3]);
 }
 
+bool A2::viewportClipping(float &sx, float &sy, float &ex, float &ey){
+    int oA = 0;
+    int oB = 0;
+
+    double xl = m_viewport[0];
+    double xr = m_viewport[1];
+    double yt = m_viewport[2];
+    double yb = m_viewport[3];
+    // r of r
+    // l of l
+    // b of b
+    // above of top
+    oA |= (sx>xr)?0:1;
+    oA |= (sx<xl)?0:(1<<1);
+    oA |= (sy<yt)?0:1<<2;
+    oA |= (sy>yb)?0:1<<3;
+
+    oB |= (ex>xr)?0:1;
+    oB |= (ex<xl)?0:(1<<1);
+    oB |= (ey<yt)?0:1<<2;
+    oB |= (ey>yb)?0:1<<3;
+
+    if((oA|oB)!=15) return false;
+    if((oA&oB)==15) return true;
+    else {
+        cout << oA << " " << oB << endl;
+        oA = ~oA;
+        oB = ~oB;
+        double t = 0;
+        if(oA & 1){
+            //cout << sx << "sichen "<< sy << endl;
+            if(ex==sx) return false;
+            t = (xr - sx)/(ex - sx);
+            sy = sy + t*(ey - sy);
+            sx = xr-eps; 
+        }
+        else if(oA & 1<<1){
+            //cout << sx << "sichen "<< sy << endl;
+            if(ex==sx) return false;
+            t = (xl - sx)/(ex - sx);
+            sy = sy + t*(ey - sy);
+            sx = xl+eps; 
+        }
+        else if(oA & 1<<2){
+            if(ey==sy) return false;
+            t = (yt - sy)/(ey - sy);
+            sx = sx + t*(ex - sx);
+            sy = yt+eps;
+        }
+        else if(oA & 1<<3){
+            if(ey==sy) return false;
+            t = (yb - sy)/(ey - sy);
+            sx = sx + t*(ex - sx);
+            sy = yb-eps;
+        }
+        else if(oB & 1){
+            if(ex==sx) return false;
+            t = (xr - ex)/(sx - ex);
+            ey = ey + t*(sy - ey);
+            ex = xr-eps; 
+        }
+        else if(oB & 1<<1){
+            if(ex==sx) return false;
+            t = (xl - ex)/(sx - ex);
+            ey = ey + t*(sy - ey);
+            ex = xl+eps; 
+        }
+        else if(oB & 1<<2){
+            if(ey==sy) return false;
+            t = (yt - ey)/(sy - ey);
+            ex = ex + t*(sx - ex);
+            ey = yt+eps;
+        }
+        else if(oB & 1<<3){
+            if(ey==sy) return false;
+            t = (yb - ey)/(sy - ey);
+            ex = ex + t*(sx - ex);
+            ey = yb-eps;
+        }
+        return viewportClipping(sx,sy,ex,ey);
+    }
+}
+
 void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     // for now, no perspective, just draw x y
     // cout << "start " << start.x << start.y << endl;
     // cout << "end " << end.x << end.y << endl;
-    drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+    if(viewportClipping(start.x, start.y, end.x, end.y)){
+        drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+    }
 }
 
 //----------------------------------------------------------------------------------------

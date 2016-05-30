@@ -98,4 +98,8 @@ protected:
         void drawWorldCoord();
 
         void drawLine_world(glm::vec4 start, glm::vec4 end);
+
+        // xl, xr, yt, yb
+        double m_viewport[4];
+        bool viewportClipping(float &sx, float &sy, float &ex, float &ey);
 };
