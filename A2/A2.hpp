@@ -83,6 +83,9 @@ protected:
         void updateMMatrix();
         void updateMMatrixHelper(int key, int mouse);
 
+        glm::mat4 m_VMatrix;
+        glm::vec4 m_ViewOrig;
+
         bool keyFlags[7];
         bool mouseFlags[3];
 

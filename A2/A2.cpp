@@ -65,14 +65,19 @@ A2::A2()
         m_MMatrix = mat4(1.0f);
         m_MCoordMatrix = mat4(1.0f);
 
-        m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 0.6f);
-        m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 0.6f);
-        m_3dCube[2] = vec4(-0.6f, 0.6f, -0.6f, 0.6f);
-        m_3dCube[3] = vec4(-0.6f, 0.6f, 0.6f, 0.6f);
-        m_3dCube[4] = vec4(0.6f, -0.6f, 0.6f, 0.6f);
-        m_3dCube[5] = vec4(0.6f, -0.6f, -0.6f, 0.6f);
-        m_3dCube[6] = vec4(-0.6f, -0.6f, -0.6f, 0.6f);
-        m_3dCube[7] = vec4(-0.6f, -0.6f, 0.6f, 0.6f);
+        m_VMatrix = mat4(1.0f);
+        m_VMatrix[0].x = -1.0f;
+        m_VMatrix = m_VMatrix * consM(z, key_T, 1);
+        m_VMatrix = m_VMatrix * consM(y, key_R, M_PI);
+
+        m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 1.0f);
+        m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 1.0f);
+        m_3dCube[2] = vec4(-0.6f, 0.6f, -0.6f, 1.0f);
+        m_3dCube[3] = vec4(-0.6f, 0.6f, 0.6f, 1.0f);
+        m_3dCube[4] = vec4(0.6f, -0.6f, 0.6f, 1.0f);
+        m_3dCube[5] = vec4(0.6f, -0.6f, -0.6f, 1.0f);
+        m_3dCube[6] = vec4(-0.6f, -0.6f, -0.6f, 1.0f);
+        m_3dCube[7] = vec4(-0.6f, -0.6f, 0.6f, 1.0f);
 
         m_modelCoord[0] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_modelCoord[1] = vec4(0.5f, 0.0f, 0.0f, 1.0f);
@@ -259,7 +264,8 @@ void A2::drawCube() {
     // rotate, scale, then transform m_3dCube
     vec4 tmp_3dCube[8];
     for (int i=0; i<8; i++){
-        tmp_3dCube[i] = m_MMatrix * m_3dCube[i];
+        tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_3dCube[i];
+        //tmp_3dCube[i] = m_MMatrix * m_3dCube[i];
     }
     setLineColour(cube_colour);
     for(int i=0; i<4; i++){
@@ -276,7 +282,7 @@ void A2::drawCube() {
 
     vec4 tmp_modelCoord[4];
     for (int i=0; i<4; i++){
-        tmp_modelCoord[i] = m_MCoordMatrix * m_modelCoord[i];
+        tmp_modelCoord[i] = m_VMatrix * m_MCoordMatrix * m_modelCoord[i];
     }
     // draw model coordinator
     setLineColour(m_x_colour);
@@ -288,12 +294,16 @@ void A2::drawCube() {
 }
 
 void A2::drawWorldCoord() {
+    vec4 tmp_worldCoord[4];
+    for (int i=0; i<4; i++){
+        tmp_worldCoord[i] = m_VMatrix * m_worldCoord[i];
+    }
     setLineColour(w_x_colour);
-    drawLine_world(m_worldCoord[0], m_worldCoord[1]);
+    drawLine_world(tmp_worldCoord[0], tmp_worldCoord[1]);
     setLineColour(w_y_colour);
-    drawLine_world(m_worldCoord[0], m_worldCoord[2]);
+    drawLine_world(tmp_worldCoord[0], tmp_worldCoord[2]);
     setLineColour(w_z_colour);
-    drawLine_world(m_worldCoord[0], m_worldCoord[3]);
+    drawLine_world(tmp_worldCoord[0], tmp_worldCoord[3]);
 }
 
 void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
@@ -414,32 +424,29 @@ void A2::resetM(const int mouse) {
 
 // construct Matrix for model given axis (x,y,z) and action (R,T,S)
 mat4 A2::consM (int axis, int action, double val){
-    cout << "consM axis action are " << axis << ", " << action << endl;
-    cout << keyFlags[4] << endl;
     mat4 ret( 1.0f ); // identity matrix
     if(axis == x){
-        if (action==key_R){
+        if (action==key_R || action==key_O){
             ret[1].y = cos(val);
             ret[1].z = sin(val);
             ret[2].y = -sin(val);
             ret[2].z = cos(val);
             return ret;
-        } else if (action==key_T){
+        } else if (action==key_T || action==key_N){
             ret[3].x = val;
             return ret;
         } else if (action==key_S){
             ret[0].x = (val+1==0?1:val+1);
-            cout << "scale" << val << endl;
             return ret;
         }
     } else if (axis == y) {
-        if (action==key_R){
+        if (action==key_R || action==key_O){
             ret[0].x = cos(val);
             ret[0].z = -sin(val);
             ret[2].x = sin(val);
             ret[2].z = cos(val);
             return ret;
-        } else if (action==key_T){
+        } else if (action==key_T || action==key_N){
             ret[3].y = val;
             return ret;
         } else if (action==key_S){
@@ -447,13 +454,13 @@ mat4 A2::consM (int axis, int action, double val){
             return ret;
         }
     } else if (axis == z) {
-        if (action==key_R){
+        if (action==key_R || action==key_O){
             ret[0].x = cos(val);
             ret[0].y = sin(val);
             ret[1].x = -sin(val);
             ret[1].y = cos(val);
             return ret;
-        } else if (action==key_T){
+        } else if (action==key_T || action==key_N){
             ret[3].z = val;
             return ret;
         } else if (action==key_S){
@@ -468,7 +475,7 @@ mat4 A2::consM (int axis, int action, double val){
 }
 
 void A2::updateMMatrixHelper(int key, int mouse) {
-    cout << "updateMMatrixHelper key, mouse" << key << ", " << mouse << endl;
+    //cout << "updateMMatrixHelper key, mouse" << key << ", " << mouse << endl;
     double* startsX = & mousePosStarts[iKM(key, mouse)][0];
     double* startsY = & mousePosStarts[iKM(key, mouse)][1];
     if(*startsX==0 && *startsY==0){
@@ -476,8 +483,13 @@ void A2::updateMMatrixHelper(int key, int mouse) {
         *startsY = m_yPos;
     } else {
         double theta = (m_xPos - *startsX)/1000;
-        m_MMatrix = m_MMatrix*consM(mouse, key, theta);
-        m_MCoordMatrix = (key==key_S) ? m_MCoordMatrix : m_MCoordMatrix*consM(mouse, key, theta);
+        mat4 transformM = consM(mouse, key, theta);
+        if(key==key_S||key==key_T||key==key_R){
+            m_MMatrix = m_MMatrix*transformM;
+            m_MCoordMatrix = (key==key_S) ? m_MCoordMatrix : m_MCoordMatrix*transformM;
+        } else if(key==key_O || key==key_N) {
+            m_VMatrix = m_VMatrix*transformM;
+        }
     }
 }
 
@@ -496,17 +508,51 @@ void A2::updateMMatrix() {
         if(keyFlags[key_S]){
             updateMMatrixHelper(key_S, m_left);
         }
+        if(keyFlags[key_N]){
+            updateMMatrixHelper(key_N, m_left);
+        }
+        if(keyFlags[key_O]){
+            updateMMatrixHelper(key_O, m_left);
+        }
     }
     // y axis
     if (mouseFlags[m_middle]) {
         if(keyFlags[key_R]){
             updateMMatrixHelper(key_R, m_middle);
         }
+        // model translate
+        if(keyFlags[key_T]){
+            updateMMatrixHelper(key_T, m_middle);
+        }
+        // model scale
+        if(keyFlags[key_S]){
+            updateMMatrixHelper(key_S, m_middle);
+        }
+        if(keyFlags[key_N]){
+            updateMMatrixHelper(key_N, m_middle);
+        }
+        if(keyFlags[key_O]){
+            updateMMatrixHelper(key_O, m_middle);
+        }
     }
     // z axis
     if (mouseFlags[m_right]) {
         if(keyFlags[key_R]){
             updateMMatrixHelper(key_R, m_right);
+        }
+        // model translate
+        if(keyFlags[key_T]){
+            updateMMatrixHelper(key_T, m_right);
+        }
+        // model scale
+        if(keyFlags[key_S]){
+            updateMMatrixHelper(key_S, m_right);
+        }
+        if(keyFlags[key_N]){
+            updateMMatrixHelper(key_N, m_right);
+        }
+        if(keyFlags[key_O]){
+            updateMMatrixHelper(key_O, m_right);
         }
     }
 }
@@ -539,7 +585,7 @@ bool A2::mouseMoveEvent (
 	if (!ImGui::IsMouseHoveringAnyWindow()) {
             m_xPos = xPos;
             m_yPos = yPos;
-            cout << "x y is " << xPos << " " << yPos << endl;
+            //cout << "x y is " << xPos << " " << yPos << endl;
         }
 
 	return eventHandled;
@@ -674,6 +720,30 @@ bool A2::keyInputEvent (
 
                 // viewport
                 keyFlags[key_V] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_O) {
+                cout << "O key pressed" << endl;
+
+                // viewport
+                keyFlags[key_O] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_N) {
+                cout << "N key pressed" << endl;
+
+                // viewport
+                keyFlags[key_N] = true;
+
+                eventHandled = true;
+            }
+            if (key == GLFW_KEY_P) {
+                cout << "P key pressed" << endl;
+
+                // viewport
+                keyFlags[key_P] = true;
 
                 eventHandled = true;
             }
