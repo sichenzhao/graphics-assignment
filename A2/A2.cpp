@@ -71,7 +71,7 @@ A2::A2()
         m_height = 674 ;
 
         m_near = 1;
-        m_far = 20;
+        m_far = 5;
 
         m_viewport[0] = -0.9; 
         m_viewport[1] = 0.9; 
@@ -471,6 +471,19 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     // map viewport
     mapViewport(start.x, start.y);
     mapViewport(end.x, end.y);
+
+    // TODO: perspective
+    float sx = start.x / start.z * m_near;
+    float sy = start.y / start.z * m_near;
+    float ex = end.x / end.z * m_near;
+    float ey = end.y / end.z * m_near;
+
+    if(viewportClipping(sx, sy, ex, ey)){
+        if(nfClipping(sx, sy, start.z, ex, ey, end.z)){
+            drawLine(vec2(sx, sy), vec2(ex, ey));
+        }
+    }
+    /**
     if(viewportClipping(start.x, start.y, end.x, end.y)){
         if(nfClipping(start.x, start.y, start.z, end.x, end.y, end.z)){
             // TODO: perspective
@@ -485,6 +498,7 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
             drawLine(vec2(sx, sy), vec2(ex, ey));
         }
     }
+    **/
 }
 
 bool A2::nfClipping(float &sx, float &sy, float &sz, float &ex, float &ey, float &ez){
