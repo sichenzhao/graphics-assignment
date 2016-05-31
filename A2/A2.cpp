@@ -70,7 +70,7 @@ A2::A2()
         m_width = 768;
         m_height = 674 ;
 
-        m_near = 10;
+        m_near = 1;
         m_far = 20;
 
         m_viewport[0] = -0.9; 
@@ -82,11 +82,17 @@ A2::A2()
         m_MCoordMatrix = mat4(1.0f);
 
         m_VMatrix = mat4(1.0f);
-        m_VMatrix[3].z = 10;
+        m_VMatrix[3].z = 3; // eye distance
         m_VMatrix[2].z = -1;
         m_VMatrix = inverse(m_VMatrix);
 
+        m_pTheta = 30 * M_PI / 180;
         m_PMatrix = mat4(1.0f);
+        m_PMatrix[0].x = 1 / tan(m_pTheta);
+        m_PMatrix[1].y = 1 / tan(m_pTheta);
+        m_PMatrix[2].z = (m_far + m_near) / (m_far - m_near);
+        m_PMatrix[3].z = -2*m_far*m_near / (m_far - m_near);
+        m_PMatrix[2].w = 1;
 
         m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 1.0f);
         m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 1.0f);
@@ -461,14 +467,22 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     // cout << "end " << end.x << end.y << endl;
     // 3d clipping
     if(start.w == -1 || end.w == -1) return;
-    // TODO: perspective
 
     // map viewport
     mapViewport(start.x, start.y);
     mapViewport(end.x, end.y);
     if(viewportClipping(start.x, start.y, end.x, end.y)){
         if(nfClipping(start.x, start.y, start.z, end.x, end.y, end.z)){
-            drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+            // TODO: perspective
+            cout << "before start" << start.x << " " << start.y << " " << start.z << endl;
+            cout << "before end" << end.x << " " << end.y << " " << end.z << endl;
+            double sx = start.x / start.z * m_near;
+            double sy = start.y / start.z * m_near;
+            double ex = end.x / end.z * m_near;
+            double ey = end.y / end.z * m_near;
+            cout << "after " << sx << " " << sy << endl;
+            cout << "after " << ex << " " << ey << endl;
+            drawLine(vec2(sx, sy), vec2(ex, ey));
         }
     }
 }

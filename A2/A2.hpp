@@ -85,6 +85,7 @@ protected:
 
         glm::mat4 m_VMatrix;
 
+        double m_pTheta;
         glm::mat4 m_PMatrix;
 
         bool keyFlags[7];

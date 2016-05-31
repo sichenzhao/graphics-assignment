@@ -6,3 +6,5 @@ Makefile
 */build/*
 *.ini
 .*
+*out
+CMakeCache.txt
