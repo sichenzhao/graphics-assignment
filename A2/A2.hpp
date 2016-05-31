@@ -86,8 +86,9 @@ protected:
 
         glm::mat4 m_VMatrix;
 
-        double m_pTheta;
+        float m_pTheta;
         glm::mat4 m_PMatrix;
+        void updatePMatrix();
 
         bool keyFlags[7];
         bool mouseFlags[3];
@@ -97,6 +98,8 @@ protected:
         double mousePosStarts[3*6 + 1][2];
         void resetK(const int key);
         void resetM(const int mouse);
+
+        int iKM(const int key, const int mouse);
 
         void cubeClip(glm::vec4 *cube);
         void drawCube();

@@ -4,8 +4,6 @@
 #include <iostream>
 using namespace std;
 
-// TODO: UI buttons + perspective FOV changed
-
 #include <imgui/imgui.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -73,7 +71,7 @@ A2::A2()
         m_height = 674 ;
 
         m_near = 1;
-        m_far = 5;
+        m_far = 15;
 
         m_viewport[0] = -0.9; 
         m_viewport[1] = 0.9; 
@@ -87,17 +85,18 @@ A2::A2()
         keyFlags[key_R] = true;
 
         m_VMatrix = mat4(1.0f);
-        m_VMatrix[3].z = 2; // eye distance
+        m_VMatrix[3].z = 10; // eye distance
         m_VMatrix[2].z = -1;
         m_VMatrix = inverse(m_VMatrix);
 
         m_pTheta = 30 * M_PI / 180;
         m_PMatrix = mat4(1.0f);
-        m_PMatrix[0].x = 1 / tan(m_pTheta/2);
+    m_PMatrix[0].x = 1 / tan(m_pTheta/2);
+        //m_PMatrix[0].x = 1 / tan(m_pTheta/2) * (m_viewport[1] - m_viewport[0])/( m_viewport[3]-m_viewport[2]);
         m_PMatrix[1].y = 1 / tan(m_pTheta/2);
-        m_PMatrix[2].z = (m_far + m_near) / (m_far - m_near);
-        m_PMatrix[3].z = -2*m_far*m_near / (m_far - m_near);
-        m_PMatrix[2].w = 1;
+        //m_PMatrix[2].z = (m_far + m_near) / (m_far - m_near);
+        //m_PMatrix[3].z = -2*m_far*m_near / (m_far - m_near);
+        //m_PMatrix[2].w = 1;
 
         m_3dCube[0] = vec4(0.6f, 0.6f, 0.6f, 1.0f);
         m_3dCube[1] = vec4(0.6f, 0.6f, -0.6f, 1.0f);
@@ -274,6 +273,18 @@ void A2::drawLine(
 /*
  * Called once per frame, before guiLogic().
  */
+
+ void A2::updatePMatrix() {
+     m_PMatrix = mat4(1.0f);
+    m_PMatrix[0].x = 1 / tan(m_pTheta/2);
+    // m_PMatrix[0].x = 1 / tan(m_pTheta/2) * (m_viewport[1] - m_viewport[0])/( m_viewport[3]-m_viewport[2]);
+     m_PMatrix[1].y = 1 / tan(m_pTheta/2);
+     //m_PMatrix[2].z = (m_far + m_near) / (m_far - m_near);
+     //m_PMatrix[3].z = -2*m_far*m_near / (m_far - m_near);
+     //m_PMatrix[2].w = 1;
+     return;
+ }
+
 void A2::appLogic()
 {
 	// Place per frame, application logic here ...
@@ -285,7 +296,6 @@ void A2::appLogic()
             double rel_xPos = (m_xPos/m_width)*2 -1;
             double rel_yPos = 1-(m_yPos/m_height)*2;
             if(*V_startX==0 && *V_startY==0){
-                cout << "V00" << endl;
                 m_viewport[0] = *V_startX = rel_xPos;
                 m_viewport[3] = *V_startY = rel_yPos;
             } else {
@@ -293,6 +303,54 @@ void A2::appLogic()
                 m_viewport[2] = std::min(*V_startY, rel_yPos);
                 m_viewport[1] = std::max(rel_xPos, *V_startX);
                 m_viewport[3] = std::max(rel_yPos, *V_startY);
+            }
+        }
+
+        if(keyFlags[key_P] && mouseFlags[0]){
+            double* P_startX = &mousePosStarts[iKM(key_P, m_left)][0];
+            double* P_startY = &mousePosStarts[iKM(key_P, m_left)][1];
+            if(*P_startX==0 && *P_startY==0){
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
+            } else {
+                m_pTheta = m_pTheta + (m_xPos - *P_startX)/2000;
+                m_pTheta = std::max(float(5*M_PI/180),m_pTheta);
+                m_pTheta = std::min(float(160*M_PI/180),m_pTheta);
+                updatePMatrix();
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
+            }
+        }
+        if(keyFlags[key_P] && mouseFlags[m_middle]){
+            cout << m_far << endl;
+            double* P_startX = &mousePosStarts[iKM(key_P, m_middle)][0];
+            double* P_startY = &mousePosStarts[iKM(key_P, m_middle)][1];
+            if(*P_startX==0 && *P_startY==0){
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
+            } else {
+                m_near = m_near + (m_xPos - *P_startX)/200;
+                m_near = std::max(0.0f,m_near);
+                m_near = std::min(m_far,m_near);
+                updatePMatrix();
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
+            }
+        }
+        if(keyFlags[key_P] && mouseFlags[m_right]){
+            cout << m_far << endl;
+            double* P_startX = &mousePosStarts[iKM(key_P, m_right)][0];
+            double* P_startY = &mousePosStarts[iKM(key_P, m_right)][1];
+            if(*P_startX==0 && *P_startY==0){
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
+            } else {
+                m_far = m_far + (m_xPos - *P_startX)/200;
+                m_far = std::max(m_near,m_far);
+                m_far = std::min(1000.0f,m_far);
+                updatePMatrix();
+                *P_startX = m_xPos;
+                *P_startY = m_yPos;
             }
         }
 
@@ -477,6 +535,7 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     mapViewport(start.x, start.y);
     mapViewport(end.x, end.y);
 
+    /**
     // TODO: perspective
     float sx = start.x / start.z ;//* m_near;
     float sy = start.y / start.z ;//* m_near;
@@ -488,17 +547,26 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
             drawLine(vec2(sx, sy), vec2(ex, ey));
         }
     }
+    **/
 
-    /**
-    // TODO: perspective
+    //perspective matrix
     start = m_PMatrix*start;
     end = m_PMatrix*end;
-    if(viewportClipping(start.x, start.y, end.x, end.y)){
-        if(nfClipping(start.x, start.y, start.z, end.x, end.y, end.z)){
-            drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
+
+    // TODO: perspective
+    if(nfClipping(start.x, start.y, start.z, end.x, end.y, end.z)){
+
+        // normalization
+        float sx = start.x / start.z ;//* m_near;
+        float sy = start.y / start.z ;//* m_near;
+        float ex = end.x / end.z ;//* m_near;
+        float ey = end.y / end.z ;//* m_near;
+        if(viewportClipping(sx, sy, ex, ey)){
+    //    if(viewportClipping(start.x, start.y, end.x, end.y)){
+            drawLine(vec2(sx, sy), vec2(ex, ey));
         }
+        //drawLine(vec2(start.x, start.y), vec2(end.x, end.y));
     }
-    **/
 }
 
 bool A2::nfClipping(float &sx, float &sy, float &sz, float &ex, float &ey, float &ez){
@@ -599,6 +667,9 @@ void A2::guiLogic()
         ImGui::SliderFloat("Near plane z", &m_near, 0.0f, 10.0f);
         ImGui::SliderFloat("Far plane z", &m_far, 0.0f, 20.0f);
 
+        ImGui::SliderAngle("Perspective theta", &m_pTheta, 5, 160.0);
+        updatePMatrix();
+
 
         if( ImGui::Button( "Reset" ) ) {
             resetGrid();
@@ -672,7 +743,7 @@ void A2::cleanup()
  * Called once per frame, update MVP matrices respectively.
  */
 // index of key mouse for mousePosStarts
-int iKM(const int key, const int mouse) {
+int A2::iKM(const int key, const int mouse) {
     return (key==6) ? 18 : key*3 + mouse;
 }
 
@@ -866,7 +937,7 @@ bool A2::mouseMoveEvent (
 	if (!ImGui::IsMouseHoveringAnyWindow()) {
             m_xPos = xPos;
             m_yPos = yPos;
-            cout << "x y is " << xPos << " " << yPos << endl;
+            //cout << "x y is " << xPos << " " << yPos << endl;
         }
 
 	return eventHandled;
@@ -1105,23 +1176,32 @@ void A2::resetGrid() {
     m_height = 674 ;
 
     m_near = 1;
-    m_far = 5;
+    m_far = 15;
 
     m_viewport[0] = -0.9; 
     m_viewport[1] = 0.9; 
     m_viewport[2] = -0.9; 
     m_viewport[3] = 0.9; 
 
-    keyFlags[key_R] = true;
-
     m_MMatrix = mat4(1.0f);
     m_SMatrix = mat4(1.0f);
     m_MCoordMatrix = mat4(1.0f);
 
+    keyFlags[key_R] = true;
+
     m_VMatrix = mat4(1.0f);
-    m_VMatrix[3].z = 2; // eye distance
+    m_VMatrix[3].z = 10; // eye distance
     m_VMatrix[2].z = -1;
     m_VMatrix = inverse(m_VMatrix);
+
+    m_pTheta = 30 * M_PI / 180;
+    m_PMatrix = mat4(1.0f);
+    m_PMatrix[0].x = 1 / tan(m_pTheta/2);
+    //m_PMatrix[0].x = 1 / tan(m_pTheta/2) * (m_viewport[1] - m_viewport[0])/( m_viewport[3]-m_viewport[2]);
+    m_PMatrix[1].y = 1 / tan(m_pTheta/2);
+//    m_PMatrix[2].z = (m_far + m_near) / (m_far - m_near);
+//    m_PMatrix[3].z = -2*m_far*m_near / (m_far - m_near);
+//    m_PMatrix[2].w = 1;
 
     return;
 }
