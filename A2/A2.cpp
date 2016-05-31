@@ -4,6 +4,8 @@
 #include <iostream>
 using namespace std;
 
+// TODO: UI buttons + perspective FOV changed
+
 #include <imgui/imgui.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -81,6 +83,8 @@ A2::A2()
         m_MMatrix = mat4(1.0f);
         m_SMatrix = mat4(1.0f);
         m_MCoordMatrix = mat4(1.0f);
+
+        keyFlags[key_R] = true;
 
         m_VMatrix = mat4(1.0f);
         m_VMatrix[3].z = 2; // eye distance
@@ -474,10 +478,10 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
     mapViewport(end.x, end.y);
 
     // TODO: perspective
-    float sx = start.x / start.z * m_near;
-    float sy = start.y / start.z * m_near;
-    float ex = end.x / end.z * m_near;
-    float ey = end.y / end.z * m_near;
+    float sx = start.x / start.z ;//* m_near;
+    float sy = start.y / start.z ;//* m_near;
+    float ex = end.x / end.z ;//* m_near;
+    float ey = end.y / end.z ;//* m_near;
 
     if(viewportClipping(sx, sy, ex, ey)){
         if(nfClipping(sx, sy, start.z, ex, ey, end.z)){
@@ -547,7 +551,53 @@ void A2::guiLogic()
 
 
         // TODO: Add more gui elements here here ...
+        // Radio buttons
 
+        ImGui::PushID(0);
+        if (ImGui::RadioButton( "Rotate View", keyFlags[key_O] )) {
+            keyFlags[key_O] = ! keyFlags[key_O];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(1);
+        if (ImGui::RadioButton( "Translate View", keyFlags[key_N] )) {
+            keyFlags[key_N] = ! keyFlags[key_N];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(2);
+        if (ImGui::RadioButton( "Perspective", keyFlags[key_P] )) {
+            keyFlags[key_P] = ! keyFlags[key_P];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(3);
+        if (ImGui::RadioButton( "Rotate Model", keyFlags[key_R] )) {
+            keyFlags[key_R] = ! keyFlags[key_R];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(4);
+        if (ImGui::RadioButton( "Translate Model", keyFlags[key_T] )) {
+            keyFlags[key_T] = ! keyFlags[key_T];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(5);
+        if (ImGui::RadioButton( "Scale Model", keyFlags[key_S] )) {
+            keyFlags[key_S] = ! keyFlags[key_S];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(6);
+        if (ImGui::RadioButton( "Viewport", keyFlags[key_V])) {
+            keyFlags[key_V] = ! keyFlags[key_V];
+        }
+        ImGui::PopID();
+
+        // near far plane set
+        ImGui::SliderFloat("Near plane z", &m_near, 0.0f, 10.0f);
+        ImGui::SliderFloat("Far plane z", &m_far, 0.0f, 20.0f);
 
 
         if( ImGui::Button( "Reset" ) ) {
@@ -1061,6 +1111,8 @@ void A2::resetGrid() {
     m_viewport[1] = 0.9; 
     m_viewport[2] = -0.9; 
     m_viewport[3] = 0.9; 
+
+    keyFlags[key_R] = true;
 
     m_MMatrix = mat4(1.0f);
     m_SMatrix = mat4(1.0f);
