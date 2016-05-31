@@ -79,6 +79,7 @@ A2::A2()
         m_viewport[3] = 0.9; 
 
         m_MMatrix = mat4(1.0f);
+        m_SMatrix = mat4(1.0f);
         m_MCoordMatrix = mat4(1.0f);
 
         m_VMatrix = mat4(1.0f);
@@ -309,7 +310,7 @@ void A2::drawCube() {
     // rotate, scale, then transform m_3dCube
     vec4 tmp_3dCube[8];
     for (int i=0; i<8; i++){
-        tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_3dCube[i];
+        tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_SMatrix * m_3dCube[i];
     }
     setLineColour(cube_colour);
     cubeClip(tmp_3dCube);
@@ -541,21 +542,26 @@ void A2::guiLogic()
 	ImGuiWindowFlags windowFlags(ImGuiWindowFlags_AlwaysAutoResize);
 	float opacity(0.5f);
 
-	ImGui::Begin("Properties", &showDebugWindow, ImVec2(100,100), opacity,
-			windowFlags);
+        ImGui::Begin("Properties", &showDebugWindow, ImVec2(100,100), opacity,
+        windowFlags);
 
 
-		// Add more gui elements here here ...
+        // TODO: Add more gui elements here here ...
 
 
-		// Create Button, and check if it was clicked:
-		if( ImGui::Button( "Quit Application" ) ) {
-			glfwSetWindowShouldClose(m_window, GL_TRUE);
-		}
 
-		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
+        if( ImGui::Button( "Reset" ) ) {
+            resetGrid();
+        }
 
-	ImGui::End();
+        // Create Button, and check if it was clicked:
+        if( ImGui::Button( "Quit Application" ) ) {
+            glfwSetWindowShouldClose(m_window, GL_TRUE);
+        }
+
+        ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
+
+        ImGui::End();
 }
 
 //----------------------------------------------------------------------------------------
@@ -699,7 +705,11 @@ void A2::updateMMatrixHelper(int key, int mouse) {
         *startsX = m_xPos;
         *startsY = m_yPos;
     } else {
-        if(key==key_S||key==key_T||key==key_R){
+        if(key==key_S){
+            double theta = (m_xPos - *startsX);
+            mat4 transformM = consM(mouse, key, theta);
+            m_SMatrix = m_SMatrix*transformM;
+        }else if(key==key_S||key==key_T||key==key_R){
             double theta = (m_xPos - *startsX);
             mat4 transformM = consM(mouse, key, theta);
             m_MMatrix = m_MMatrix*transformM;
@@ -1036,5 +1046,30 @@ bool A2::keyInputEvent (
 
 void A2::resetGrid() {
     cout << "Reset Cube" << endl;
+
+    memset(keyFlags, 0, sizeof(bool)*7);
+    memset(mouseFlags, 0, sizeof(bool)*3);
+    memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
+
+    m_width = 768;
+    m_height = 674 ;
+
+    m_near = 1;
+    m_far = 5;
+
+    m_viewport[0] = -0.9; 
+    m_viewport[1] = 0.9; 
+    m_viewport[2] = -0.9; 
+    m_viewport[3] = 0.9; 
+
+    m_MMatrix = mat4(1.0f);
+    m_SMatrix = mat4(1.0f);
+    m_MCoordMatrix = mat4(1.0f);
+
+    m_VMatrix = mat4(1.0f);
+    m_VMatrix[3].z = 2; // eye distance
+    m_VMatrix[2].z = -1;
+    m_VMatrix = inverse(m_VMatrix);
+
     return;
 }

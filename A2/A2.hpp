@@ -78,6 +78,7 @@ protected:
         glm::vec4 m_worldCoord[4];
 
         glm::mat4 m_MMatrix;
+        glm::mat4 m_SMatrix;
         glm::mat4 m_MCoordMatrix;
         glm::mat4 consM(int axis, int action, double val);
         void updateMMatrix();
