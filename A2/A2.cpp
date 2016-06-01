@@ -66,6 +66,8 @@ A2::A2()
         memset(keyFlags, 0, sizeof(bool)*7);
         memset(mouseFlags, 0, sizeof(bool)*3);
         memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
+        memset(m_cubeShow, 1, sizeof(int)*6);
+        doCubeClip = false;
 
         m_width = 768;
         m_height = 674 ;
@@ -368,6 +370,40 @@ void A2::appLogic()
     drawLine(vec2(m_viewport[0],m_viewport[3]), vec2(m_viewport[1],m_viewport[3]));
 }
 
+void A2::drawCubeLines(vec4 * cube, int i, int j, int k, int l) {
+    drawLine_world(cube[i], cube[j]);
+    drawLine_world(cube[j], cube[k]);
+    drawLine_world(cube[k], cube[l]);
+    drawLine_world(cube[l], cube[i]);
+}
+
+void A2::drawCubePlane(vec4 * cube, int i){
+    //m_cubeShow[0] = (dot(eye1,cube[0]-cube[4])>0); // 0123
+    //m_cubeShow[1] = (dot(eye1,cube[0]-cube[3])>0); // 0154
+    //m_cubeShow[2] = (dot(eye1,cube[0]-cube[1])>0); // 0374
+    //m_cubeShow[3] = (dot(eye2,cube[6]-cube[7])>0); // 1265
+    //m_cubeShow[4] = (dot(eye2,cube[6]-cube[5])>0); // 2376
+    //m_cubeShow[5] = (dot(eye2,cube[6]-cube[2])>0); // 4567
+    if(m_cubeShow[0]){
+        drawCubeLines(cube, 0, 1, 2, 3);
+    }
+    if(m_cubeShow[1]){
+        drawCubeLines(cube, 0, 1, 5, 4);
+    }
+    if(m_cubeShow[2]){
+        drawCubeLines(cube, 0, 3, 7, 4);
+    }
+    if(m_cubeShow[3]){
+        drawCubeLines(cube, 1, 2, 6, 5);
+    }
+    if(m_cubeShow[4]){
+        drawCubeLines(cube, 2, 3, 7, 6);
+    }
+    if(m_cubeShow[5]){
+        drawCubeLines(cube, 4, 5, 6, 7);
+    }
+}
+
 void A2::drawCube() {
     // rotate, scale, then transform m_3dCube
     vec4 tmp_3dCube[8];
@@ -375,18 +411,39 @@ void A2::drawCube() {
         tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_SMatrix * m_3dCube[i];
     }
     setLineColour(cube_colour);
-    cubeClip(tmp_3dCube);
-    for(int i=0; i<4; i++){
-        drawLine_world(tmp_3dCube[i], tmp_3dCube[i+4]);
-        if (i==3){
-            drawLine_world(tmp_3dCube[i], tmp_3dCube[i-3]);
-            drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+4-3]);
-        }
-        else {
-            drawLine_world(tmp_3dCube[i], tmp_3dCube[i+1]);
-            drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+1+4]);
+    memset(m_cubeShow, 1, sizeof(int)*6);
+    if(doCubeClip){
+        //cout << "do cube clip" << endl;
+        cubeClip(tmp_3dCube);
+    }
+    for(int i=0; i<8; i++){
+        if(m_cubeShow[i]){
+            drawCubePlane(tmp_3dCube, i);
         }
     }
+    /**
+    for(int i=0; i<4; i++){
+        if(m_cubeShow[i][i+4]){
+            drawLine_world(tmp_3dCube[i], tmp_3dCube[i+4]);
+        }
+        if (i==3){
+            if(m_cubeShow[i][i-3]){
+                drawLine_world(tmp_3dCube[i], tmp_3dCube[i-3]);
+            }
+            if(m_cubeShow[i+4][i+4-3]){
+                drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+4-3]);
+            }
+        }
+        else {
+            if(m_cubeShow[i][i+1]){
+                drawLine_world(tmp_3dCube[i], tmp_3dCube[i+1]);
+            }
+            if(m_cubeShow[i+4][i+5]){
+                drawLine_world(tmp_3dCube[i+4], tmp_3dCube[i+1+4]);
+            }
+        }
+    }
+    **/
 
     vec4 tmp_modelCoord[4];
     for (int i=0; i<4; i++){
@@ -407,13 +464,12 @@ void A2::cubeClip(vec4 *cube){
 
     //cout << cube[0].x << " " << cube[0].y << " " << cube[0].z << " " << endl;
 
-    bool planeShow[6];
-    planeShow[0] = (dot(eye1,cube[0]-cube[4])>0);
-    planeShow[1] = (dot(eye1,cube[0]-cube[3])>0);
-    planeShow[2] = (dot(eye1,cube[0]-cube[1])>0);
-    planeShow[3] = (dot(eye2,cube[6]-cube[7])>0);
-    planeShow[4] = (dot(eye2,cube[6]-cube[5])>0);
-    planeShow[5] = (dot(eye2,cube[6]-cube[2])>0);
+    m_cubeShow[0] = (dot(eye1,cube[0]-cube[4])>0); // 0123
+    m_cubeShow[1] = (dot(eye1,cube[0]-cube[3])>0); // 0154
+    m_cubeShow[2] = (dot(eye1,cube[0]-cube[1])>0); // 0374
+    m_cubeShow[3] = (dot(eye2,cube[6]-cube[7])>0); // 1265
+    m_cubeShow[4] = (dot(eye2,cube[6]-cube[5])>0); // 2376
+    m_cubeShow[5] = (dot(eye2,cube[6]-cube[2])>0); // 4567
 
     return;
 }
@@ -660,6 +716,12 @@ void A2::guiLogic()
         ImGui::PushID(6);
         if (ImGui::RadioButton( "Viewport", keyFlags[key_V])) {
             keyFlags[key_V] = ! keyFlags[key_V];
+        }
+        ImGui::PopID();
+
+        ImGui::PushID(7);
+        if (ImGui::RadioButton( "3D Clipping Enable", doCubeClip)) {
+            doCubeClip = !doCubeClip;
         }
         ImGui::PopID();
 
@@ -1026,6 +1088,9 @@ bool A2::windowResizeEvent (
 
 	// Fill in with event handling code...
         cout << height << "<-h w->" << width << endl;
+        m_height = height;
+        m_width = width;
+
 
 	return eventHandled;
 }
@@ -1171,6 +1236,8 @@ void A2::resetGrid() {
     memset(keyFlags, 0, sizeof(bool)*7);
     memset(mouseFlags, 0, sizeof(bool)*3);
     memset(mousePosStarts, 0, sizeof(mousePosStarts[0][0])*(3*6+1)*2);
+    memset(m_cubeShow, 1, sizeof(int)*6);
+    doCubeClip = false;
 
     m_width = 768;
     m_height = 674 ;

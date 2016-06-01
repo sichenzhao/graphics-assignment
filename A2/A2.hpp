@@ -101,7 +101,13 @@ protected:
 
         int iKM(const int key, const int mouse);
 
+        // 3d clipping for planes on the back side
+        bool doCubeClip;
+        int m_cubeShow[6];
         void cubeClip(glm::vec4 *cube);
+
+        void drawCubeLines(glm::vec4 *cube, int i, int j, int k, int l);
+        void drawCubePlane(glm::vec4 *cube, int i);
         void drawCube();
         void drawWorldCoord();
 
