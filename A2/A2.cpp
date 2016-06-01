@@ -411,7 +411,6 @@ void A2::drawCube() {
         tmp_3dCube[i] = m_VMatrix * m_MMatrix * m_SMatrix * m_3dCube[i];
     }
     setLineColour(cube_colour);
-    memset(m_cubeShow, 1, sizeof(int)*6);
     if(doCubeClip){
         //cout << "do cube clip" << endl;
         cubeClip(tmp_3dCube);
@@ -593,10 +592,10 @@ void A2::drawLine_world(glm::vec4 start, glm::vec4 end){
 
     /**
     // TODO: perspective
-    float sx = start.x / start.z ;//* m_near;
-    float sy = start.y / start.z ;//* m_near;
-    float ex = end.x / end.z ;//* m_near;
-    float ey = end.y / end.z ;//* m_near;
+    float sx = start.x / start.z ; m_near;
+    float sy = start.y / start.z ; m_near;
+    float ex = end.x / end.z ; m_near;
+    float ey = end.y / end.z ; m_near;
 
     if(viewportClipping(sx, sy, ex, ey)){
         if(nfClipping(sx, sy, start.z, ex, ey, end.z)){
@@ -722,6 +721,9 @@ void A2::guiLogic()
         ImGui::PushID(7);
         if (ImGui::RadioButton( "3D Clipping Enable", doCubeClip)) {
             doCubeClip = !doCubeClip;
+            if(!doCubeClip){
+                memset(m_cubeShow, 1, sizeof(int)*6);
+            }
         }
         ImGui::PopID();
 
