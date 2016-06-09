@@ -11,8 +11,8 @@
 using namespace glm;
 using namespace std;
 
-//static const size_t DIM = 16;
-static const size_t DIM = 5;
+static const size_t DIM = 40;
+//static const size_t DIM = 5;
 static int xposition = 0;
 static int min_distance = 1;
 static bool shift_pressed = false;
