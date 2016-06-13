@@ -348,14 +348,15 @@ void A3::guiLogic()
 static void updateShaderUniforms(
 		const ShaderProgram & shader,
 		const GeometryNode & node,
-		const glm::mat4 & viewMatrix
+		const glm::mat4 & viewMatrix,
+        const glm::mat4 parentM
 ) {
 
 	shader.enable();
 	{
 		//-- Set ModelView matrix:
 		GLint location = shader.getUniformLocation("ModelView");
-		mat4 modelView = viewMatrix * node.trans;
+		mat4 modelView = viewMatrix * parentM * node.trans;
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
 		CHECK_GL_ERRORS;
 
@@ -401,9 +402,12 @@ void A3::draw() {
 //----------------------------------------------------------------------------------------
 void A3::renderSceneGraph(const SceneNode & root) {
 
+    const mat4 rootTransM = root.get_transform();
+
 	// Bind the VAO once here, and reuse for all GeometryNode rendering below.
 	glBindVertexArray(m_vao_meshData);
 
+    // TODO: render scene correctly
 	// This is emphatically *NOT* how you should be drawing the scene graph in
 	// your final implementation.  This is a non-hierarchical demonstration
 	// in which we assume that there is a list of GeometryNodes living directly
@@ -422,9 +426,12 @@ void A3::renderSceneGraph(const SceneNode & root) {
 		if (node->m_nodeType != NodeType::GeometryNode)
 			continue;
 
+        // const mat4 nodeTransM = rootTransM * node->get_transform();
+        // node->set_transform(nodeTransM);
+
 		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
 
-		updateShaderUniforms(m_shader, *geometryNode, m_view);
+		updateShaderUniforms(m_shader, *geometryNode, m_view, root.trans);
 
 
 		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
