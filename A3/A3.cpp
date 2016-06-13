@@ -32,8 +32,32 @@ A3::A3(const std::string & luaSceneFile)
 	  m_vao_arcCircle(0),
 	  m_vbo_arcCircle(0)
 {
+        memset(keyFlags, 0, sizeof(bool)*12);
+        memset(mouseFlags, 0, sizeof(bool)*3);
 
 }
+
+enum {
+    key_I, // reset Position
+    key_O, // reset Orientation
+    key_N, // reset Joints
+
+    key_U, // UNDO
+    key_R, // REDO
+
+    key_C, // draw Circle for trackball
+    key_Z, // Z_buffer
+    key_B, // backface culling
+    key_F, // frontface culling
+
+    key_P, // Position/Orientation
+    key_J, // Joint
+    key_M  // Hide all panels
+};
+
+enum {
+    m_left, m_middle, m_right
+};
 
 //----------------------------------------------------------------------------------------
 // Destructor
@@ -302,6 +326,7 @@ void A3::uploadCommonSceneUniforms() {
 void A3::appLogic()
 {
 	// Place per frame, application logic here ...
+    handleKMEvents();
 
 	uploadCommonSceneUniforms();
 }
@@ -349,14 +374,16 @@ static void updateShaderUniforms(
 		const ShaderProgram & shader,
 		const GeometryNode & node,
 		const glm::mat4 & viewMatrix,
-        const glm::mat4 parentM
+        const glm::mat4 parentM,
+        const glm::mat4 virtualM
 ) {
+    // virtualM for virtual sphere
 
 	shader.enable();
 	{
 		//-- Set ModelView matrix:
 		GLint location = shader.getUniformLocation("ModelView");
-		mat4 modelView = viewMatrix * parentM * node.trans;
+		mat4 modelView = viewMatrix * parentM * node.trans * virtualM;
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
 		CHECK_GL_ERRORS;
 
@@ -382,6 +409,7 @@ static void updateShaderUniforms(
 
 	}
 	shader.disable();
+	CHECK_GL_ERRORS;
 
 }
 
@@ -392,7 +420,7 @@ static void updateShaderUniforms(
 void A3::draw() {
 
 	glEnable( GL_DEPTH_TEST );
-	renderSceneGraph(*m_rootNode);
+	renderSceneGraph(*m_rootNode, m_rootNode->trans);
 
 
 	glDisable( GL_DEPTH_TEST );
@@ -400,7 +428,45 @@ void A3::draw() {
 }
 
 //----------------------------------------------------------------------------------------
-void A3::renderSceneGraph(const SceneNode & root) {
+void A3::renderSceneHelper(const SceneNode & root, glm::mat4 parentM) {
+    if(root.children.empty()) {
+        return;
+    }
+
+	for (const SceneNode * node : root.children) {
+
+		if (node->m_nodeType != NodeType::GeometryNode) {
+            renderSceneGraph(*node, parentM);
+			continue;
+        }
+
+        // const mat4 nodeTransM = rootTransM * node->get_transform();
+        // node->set_transform(nodeTransM);
+
+		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+
+		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model);
+        //cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
+
+		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
+		BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
+
+		//-- Now render the mesh:
+		m_shader.enable();
+        //cout << batchInfo.startIndex << "~" << batchInfo.numIndices << endl;
+		glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
+		m_shader.disable();
+        //cout << "finish render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
+
+        renderSceneHelper(*geometryNode, parentM * node->trans);
+	}
+    return;
+}
+
+void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
+    if(root.children.empty()) {
+        return;
+    }
 
     const mat4 rootTransM = root.get_transform();
 
@@ -421,30 +487,9 @@ void A3::renderSceneGraph(const SceneNode & root) {
 	// could put a set of mutually recursive functions in this class, which
 	// walk down the tree from nodes of different types.
 
-	for (const SceneNode * node : root.children) {
-
-		if (node->m_nodeType != NodeType::GeometryNode)
-			continue;
-
-        // const mat4 nodeTransM = rootTransM * node->get_transform();
-        // node->set_transform(nodeTransM);
-
-		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
-
-		updateShaderUniforms(m_shader, *geometryNode, m_view, root.trans);
-
-
-		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
-		BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
-
-		//-- Now render the mesh:
-		m_shader.enable();
-		glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
-		m_shader.disable();
-	}
+    renderSceneHelper(root, parentM);
 
 	glBindVertexArray(0);
-	CHECK_GL_ERRORS;
 }
 
 //----------------------------------------------------------------------------------------
@@ -503,6 +548,9 @@ bool A3::mouseMoveEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+    m_xPos = xPos;
+    m_yPos = yPos;
+    eventHandled = true;
 
 	return eventHandled;
 }
@@ -511,6 +559,33 @@ bool A3::mouseMoveEvent (
 /*
  * Event handler.  Handles mouse button events.
  */
+void A3::handleKMEvents() {
+    double delta_x = m_xPos - m_px;
+    double delta_y = m_yPos - m_py;
+    if (mouseFlags[m_left]){
+        if(keyFlags[key_P]){}
+    }
+    if (mouseFlags[m_middle]){
+        if(keyFlags[key_P]){}
+    }
+    if (mouseFlags[m_right]){
+        // virtual trackball handler
+        if(keyFlags[key_P]){
+            // delta_x -> rotation by y axis
+            float theta = delta_x / m_windowWidth * 180.0f;
+            m_model = rotate(m_model, glm::radians(theta), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            // delta_y -> rotation by x axis
+            theta = delta_y / m_windowHeight * 180.0f;
+            m_model = rotate(m_model, glm::radians(theta), glm::vec3(1.0f, 0.0f, 0.0f));
+        }
+    }
+    // keeps track of previous x, y positions
+    m_px = m_xPos;
+    m_py = m_yPos;
+    return;
+}
+
 bool A3::mouseButtonInputEvent (
 		int button,
 		int actions,
@@ -519,6 +594,43 @@ bool A3::mouseButtonInputEvent (
 	bool eventHandled(false);
 
 	// Fill in with event handling code...
+	if (!ImGui::IsMouseHoveringAnyWindow()) {
+		// The user clicked in the window.  If it's the left
+		// mouse button, initiate a rotation.
+                if (button == GLFW_MOUSE_BUTTON_LEFT){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_left] = true;
+                            cout << "left mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_left] = false;
+                            cout << "left mouse released" << endl;
+                    }
+                }
+                if (button == GLFW_MOUSE_BUTTON_RIGHT){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_right] = true;
+                            cout << "right mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_right] = false;
+                            cout << "right mouse released" << endl;
+                    }
+                }
+                if (button == GLFW_MOUSE_BUTTON_MIDDLE){
+                    if (actions == GLFW_PRESS) {
+                            mouseFlags[m_middle] = true;
+                            cout << "middle mouse pressed" << endl;
+                    }
+
+                    if (actions == GLFW_RELEASE) {
+                            mouseFlags[m_middle] = false;
+                            cout << "middle mouse released" << endl;
+                    }
+                }
+	}
 
 	return eventHandled;
 }
@@ -574,8 +686,21 @@ bool A3::keyInputEvent (
             glfwSetWindowShouldClose(m_window, GL_TRUE);
             eventHandled = true;
         }
+        if (key == GLFW_KEY_P) {
+            cout << "P key pressed" << endl;
+            // Position/Orientation
+            keyFlags[key_P] = true;
+            eventHandled = true;
+        }
     }
 	// Fill in with event handling code...
+    if ( action == GLFW_RELEASE ) {
+        if (key == GLFW_KEY_P) {
+            cout << "P key released" << endl;
+            keyFlags[key_P] = false;
+            eventHandled = true;
+        }
+    }
 
 	return eventHandled;
 }

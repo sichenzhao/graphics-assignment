@@ -36,6 +36,12 @@ protected:
 	virtual bool windowResizeEvent(int width, int height) override;
 	virtual bool keyInputEvent(int key, int action, int mods) override;
 
+    bool keyFlags[12];
+    bool mouseFlags[3];
+    double m_xPos, m_yPos;
+    double m_px, m_py;
+    void handleKMEvents();
+
 	//-- One time initialization methods:
 	void processLuaSceneFile(const std::string & filename);
 	void createShaderProgram();
@@ -47,11 +53,13 @@ protected:
 
 	void initPerspectiveMatrix();
 	void uploadCommonSceneUniforms();
-	void renderSceneGraph(const SceneNode &node);
+	void renderSceneGraph(const SceneNode &node, glm::mat4 parentM);
+	void renderSceneHelper(const SceneNode &node, glm::mat4 parentM);
 	void renderArcCircle();
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
+	glm::mat4 m_model;
 
 	LightSource m_light;
 
