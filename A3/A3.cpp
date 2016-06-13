@@ -375,7 +375,8 @@ static void updateShaderUniforms(
 		const GeometryNode & node,
 		const glm::mat4 & viewMatrix,
         const glm::mat4 parentM,
-        const glm::mat4 virtualM
+        const glm::mat4 virtualM,
+        const glm::mat4 worldTM
 ) {
     // virtualM for virtual sphere
 
@@ -383,7 +384,9 @@ static void updateShaderUniforms(
 	{
 		//-- Set ModelView matrix:
 		GLint location = shader.getUniformLocation("ModelView");
-		mat4 modelView = viewMatrix * parentM * node.trans * virtualM;
+        // last <-- first transformation
+        // node.trans has to be right most for scaling first
+		mat4 modelView = viewMatrix * worldTM * parentM * virtualM * node.trans;
 		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
 		CHECK_GL_ERRORS;
 
@@ -445,7 +448,7 @@ void A3::renderSceneHelper(const SceneNode & root, glm::mat4 parentM) {
 
 		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
 
-		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model);
+		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
         //cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
 
 		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
@@ -562,11 +565,22 @@ bool A3::mouseMoveEvent (
 void A3::handleKMEvents() {
     double delta_x = m_xPos - m_px;
     double delta_y = m_yPos - m_py;
+
+    double delta_xp = delta_x / m_windowWidth;
+    double delta_yp = delta_y / m_windowWidth;
+
     if (mouseFlags[m_left]){
-        if(keyFlags[key_P]){}
+        // translate on x and y axis
+        if(keyFlags[key_P]){
+            cout << delta_x << " " << delta_y << endl;
+            w_translate = translate(w_translate, glm::vec3(delta_xp, -delta_yp, 0.0f));
+        }
     }
     if (mouseFlags[m_middle]){
-        if(keyFlags[key_P]){}
+        // translate on z axis
+        if(keyFlags[key_P]){
+            w_translate = translate(w_translate, glm::vec3(0.0f, 0.0f, delta_yp));
+        }
     }
     if (mouseFlags[m_right]){
         // virtual trackball handler

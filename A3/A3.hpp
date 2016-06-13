@@ -60,6 +60,7 @@ protected:
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
 	glm::mat4 m_model;
+	glm::mat4 w_translate;
 
 	LightSource m_light;
 
