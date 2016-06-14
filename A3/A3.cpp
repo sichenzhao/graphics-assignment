@@ -423,7 +423,10 @@ static void updateShaderUniforms(
 void A3::draw() {
 
 	glEnable( GL_DEPTH_TEST );
+
+	glBindVertexArray(m_vao_meshData);
 	renderSceneGraph(*m_rootNode, m_rootNode->trans);
+	glBindVertexArray(0);
 
 
 	glDisable( GL_DEPTH_TEST );
@@ -431,41 +434,6 @@ void A3::draw() {
 }
 
 //----------------------------------------------------------------------------------------
-void A3::renderSceneHelper(const SceneNode & root, glm::mat4 parentM) {
-    if(root.children.empty()) {
-        return;
-    }
-
-	for (const SceneNode * node : root.children) {
-
-		if (node->m_nodeType != NodeType::GeometryNode) {
-            renderSceneGraph(*node, parentM);
-			continue;
-        }
-
-        // const mat4 nodeTransM = rootTransM * node->get_transform();
-        // node->set_transform(nodeTransM);
-
-		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
-
-		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
-        //cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
-
-		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
-		BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
-
-		//-- Now render the mesh:
-		m_shader.enable();
-        //cout << batchInfo.startIndex << "~" << batchInfo.numIndices << endl;
-		glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
-		m_shader.disable();
-        //cout << "finish render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
-
-        renderSceneHelper(*geometryNode, parentM * node->trans);
-	}
-    return;
-}
-
 void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
     if(root.children.empty()) {
         return;
@@ -474,7 +442,7 @@ void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
     const mat4 rootTransM = root.get_transform();
 
 	// Bind the VAO once here, and reuse for all GeometryNode rendering below.
-	glBindVertexArray(m_vao_meshData);
+	//glBindVertexArray(m_vao_meshData);
 
     // TODO: render scene correctly
 	// This is emphatically *NOT* how you should be drawing the scene graph in
@@ -490,9 +458,32 @@ void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
 	// could put a set of mutually recursive functions in this class, which
 	// walk down the tree from nodes of different types.
 
-    renderSceneHelper(root, parentM);
+	for (const SceneNode * node : root.children) {
 
-	glBindVertexArray(0);
+		if (node->m_nodeType != NodeType::GeometryNode) {
+            renderSceneGraph(*node, parentM);
+			continue;
+        }
+
+		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+
+		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
+        // cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
+
+		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
+		BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
+
+		//-- Now render the mesh:
+		m_shader.enable();
+        //cout << batchInfo.startIndex << "~" << batchInfo.numIndices << endl;
+		glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
+		m_shader.disable();
+        //cout << "finish render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
+
+        renderSceneGraph(*geometryNode, parentM * node->trans);
+	}
+
+	//glBindVertexArray(0);
 }
 
 //----------------------------------------------------------------------------------------
@@ -587,11 +578,11 @@ void A3::handleKMEvents() {
         if(keyFlags[key_P]){
             // delta_x -> rotation by y axis
             float theta = delta_x / m_windowWidth * 180.0f;
-            m_model = rotate(m_model, glm::radians(theta), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_rootNode->trans = rotate(m_rootNode->trans, glm::radians(theta), glm::vec3(0.0f, 1.0f, 0.0f));
 
             // delta_y -> rotation by x axis
             theta = delta_y / m_windowHeight * 180.0f;
-            m_model = rotate(m_model, glm::radians(theta), glm::vec3(1.0f, 0.0f, 0.0f));
+            m_rootNode->trans = rotate(m_rootNode->trans, glm::radians(theta), glm::vec3(1.0f, 0.0f, 0.0f));
         }
     }
     // keeps track of previous x, y positions
