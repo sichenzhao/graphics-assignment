@@ -447,16 +447,34 @@ void A3::draw() {
         pickingHelper();
     }
 
-	glEnable( GL_DEPTH_TEST );
+    if(keyFlags[key_Z]){
+        glEnable( GL_DEPTH_TEST );
+    }
+    if(keyFlags[key_B]){
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+    }
+    if(keyFlags[key_F]){
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+    }
+    if(keyFlags[key_F] && keyFlags[key_B]){
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT_AND_BACK);
+    }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindVertexArray(m_vao_meshData);
 	renderSceneGraph(*m_rootNode, m_rootNode->trans);
 	glBindVertexArray(0);
 
+    if(keyFlags[key_Z]){
+        glDisable( GL_DEPTH_TEST );
+    }
 
-	glDisable( GL_DEPTH_TEST );
-	renderArcCircle();
+    if(keyFlags[key_C] || (keyFlags[key_P] && mouseFlags[m_right])){
+        renderArcCircle();
+    }
 
     jointAngle = 0;
     jointAngle_y = 0;
@@ -497,6 +515,24 @@ void A3::pickingHelper() {
     }
 
     m_pickingMode = false;
+}
+
+/**
+* Get a normalized vector from the center of the virtual ball O to a
+* point P on the virtual ball surface, such that P is aligned on
+* screen's (X,Y) coordinates.  If (X,Y) is too far away from the
+* sphere, return the nearest point on the virtual ball surface.
+*/
+glm::vec3 A3::get_arcball_vector(int x, int y) {
+    glm::vec3 P = glm::vec3(1.0*x/m_windowWidth*2 - 1.0, 1.0*y/m_windowHeight*2 - 1.0, 0);
+    P.y = -P.y;
+    float OP_squared = P.x * P.x + P.y * P.y;
+    if (OP_squared <= 1*1) {
+        P.z = sqrt(1*1 - OP_squared);  // Pythagore
+    } else {
+        P = glm::normalize(P);  // nearest point
+    }
+    return P;
 }
 
 //----------------------------------------------------------------------------------------
@@ -668,13 +704,13 @@ void A3::handleKMEvents() {
     if (mouseFlags[m_right]){
         // virtual trackball handler
         if(keyFlags[key_P]){
-            // delta_x -> rotation by y axis
-            float theta = delta_x / m_windowWidth * 180.0f;
-            m_rootNode->trans = rotate(m_rootNode->trans, glm::radians(theta), glm::vec3(0.0f, 1.0f, 0.0f));
-
-            // delta_y -> rotation by x axis
-            theta = delta_y / m_windowHeight * 180.0f;
-            m_rootNode->trans = rotate(m_rootNode->trans, glm::radians(theta), glm::vec3(1.0f, 0.0f, 0.0f));
+            vec3 S = get_arcball_vector(m_px, m_py);
+            vec3 T = get_arcball_vector(m_xPos, m_yPos);
+            float angle = acos(std::min(1.0f, glm::dot(S, T)));
+            glm::vec3 axis_in_camera_coord = glm::cross(S, T);
+            axis_in_camera_coord = normalize(axis_in_camera_coord);
+            vec4 axisInWorldFrame = vec4(axis_in_camera_coord, 0.0f) * inverse(m_view);
+            m_rootNode->rotate({axisInWorldFrame.x, axisInWorldFrame.y,  axisInWorldFrame.z}, degrees(angle));
         }
         if(keyFlags[key_J]){
             jointAngle_y = delta_xp * 180.0f;
@@ -794,9 +830,28 @@ bool A3::keyInputEvent (
             eventHandled = true;
         }
         if (key == GLFW_KEY_J) {
-            //cout << "J key pressed" << endl;
             // Joint
             keyFlags[key_J] = true;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_C) {
+            // Circle
+            keyFlags[key_C] = true;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_Z) {
+            // Z buffer
+            keyFlags[key_Z] = true;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_B) {
+            // Backface culling
+            keyFlags[key_B] = true;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_F) {
+            // Frontface culling
+            keyFlags[key_F] = true;
             eventHandled = true;
         }
     }
@@ -808,11 +863,30 @@ bool A3::keyInputEvent (
             eventHandled = true;
         }
         if (key == GLFW_KEY_J) {
-            //cout << "J key released" << endl;
             // Joint
             keyFlags[key_J] = false;
             eventHandled = true;
             j_clicked = false;
+        }
+        if (key == GLFW_KEY_C) {
+            // Circle
+            keyFlags[key_C] = false;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_Z) {
+            // Z buffer
+            keyFlags[key_Z] = false;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_B) {
+            // Backface culling
+            keyFlags[key_B] = false;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_F) {
+            // Frontface culling
+            keyFlags[key_F] = false;
+            eventHandled = true;
         }
     }
 

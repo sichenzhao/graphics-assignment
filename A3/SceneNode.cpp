@@ -96,6 +96,12 @@ void SceneNode::rotate(char axis, float angle) {
 	tr = rot_matrix * tr;
 }
 
+void SceneNode::rotate(glm::vec3 axis, float angle) {
+	mat4 rot_matrix = glm::rotate(degreesToRadians(angle), axis);
+	trans = rot_matrix * trans;
+	tr = rot_matrix * tr;
+}
+
 //---------------------------------------------------------------------------------------
 void SceneNode::scale(const glm::vec3 & amount) {
 	trans = glm::scale(amount) * trans;
