@@ -70,6 +70,8 @@ protected:
 	glm::mat4 m_model;
 	glm::mat4 w_translate;
 
+    bool keySelected;
+
     float jointAngle;
     float jointAngle_y;
 
@@ -99,4 +101,6 @@ protected:
 	std::string m_luaSceneFile;
 
 	std::shared_ptr<SceneNode> m_rootNode;
+
+    void resetAll();
 };

@@ -20,24 +20,6 @@ static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
 
-//----------------------------------------------------------------------------------------
-// Constructor
-A3::A3(const std::string & luaSceneFile)
-	: m_luaSceneFile(luaSceneFile),
-	  m_positionAttribLocation(0),
-	  m_normalAttribLocation(0),
-	  m_vao_meshData(0),
-	  m_vbo_vertexPositions(0),
-	  m_vbo_vertexNormals(0),
-	  m_vao_arcCircle(0),
-	  m_vbo_arcCircle(0)
-{
-        memset(keyFlags, 0, sizeof(bool)*12);
-        memset(mouseFlags, 0, sizeof(bool)*3);
-        m_pickingMode = false;
-
-}
-
 enum {
     key_I, // reset Position
     key_O, // reset Orientation
@@ -59,6 +41,25 @@ enum {
 enum {
     m_left, m_middle, m_right
 };
+
+//----------------------------------------------------------------------------------------
+// Constructor
+A3::A3(const std::string & luaSceneFile)
+	: m_luaSceneFile(luaSceneFile),
+	  m_positionAttribLocation(0),
+	  m_normalAttribLocation(0),
+	  m_vao_meshData(0),
+	  m_vbo_vertexPositions(0),
+	  m_vbo_vertexNormals(0),
+	  m_vao_arcCircle(0),
+	  m_vbo_arcCircle(0)
+{
+        memset(keyFlags, 0, sizeof(bool)*12);
+        keyFlags[key_P] = true;
+        memset(mouseFlags, 0, sizeof(bool)*3);
+        m_pickingMode = false;
+
+}
 
 //----------------------------------------------------------------------------------------
 // Destructor
@@ -356,12 +357,56 @@ void A3::guiLogic()
 
 
 		// Add more gui elements here here ...
+        if( ImGui::BeginMenu("Application") ) {
+            if(ImGui::Button("Reset Position")){
+                keyFlags[key_I] = !keyFlags[key_I];
+            }
+            if(ImGui::Button("Reset Orientation")){
+                keyFlags[key_O] = !keyFlags[key_O];
+            }
+            if(ImGui::Button("Reset Joints")){
+                keyFlags[key_N] = !keyFlags[key_N];
+            }
+            if(ImGui::Button("Reset ALL")){
+                resetAll();
+            }
+            // Create Button, and check if it was clicked:
+            if( ImGui::Button( "Quit Application" ) ) {
+                glfwSetWindowShouldClose(m_window, GL_TRUE);
+            }
+            ImGui::EndMenu();
+        }
+        if( ImGui::BeginMenu("Edit") ) {
+            if(ImGui::Button("Undo")){
+                keyFlags[key_U] = !keyFlags[key_U];
+            }
+            if(ImGui::Button("Redo")){
+                keyFlags[key_R] = !keyFlags[key_R];
+            }
+            ImGui::EndMenu();
+        }
+        if( ImGui::BeginMenu("Options") ) {
+            ImGui::Checkbox("Circle", &keyFlags[key_C]);
+            ImGui::Checkbox("Z-Buffer", &keyFlags[key_Z]);
+            ImGui::Checkbox("Backface Culling", &keyFlags[key_B]);
+            ImGui::Checkbox("Frontface Culling", &keyFlags[key_F]);
+            ImGui::EndMenu();
+        }
 
+        ImGui::PushID(0);
+        if (ImGui::RadioButton( "Position/Prientation", keyFlags[key_P] )) {
+            keyFlags[key_P] = ! keyFlags[key_P];
+            keyFlags[key_J] = false;
+        }
+        ImGui::PopID();
 
-		// Create Button, and check if it was clicked:
-		if( ImGui::Button( "Quit Application" ) ) {
-			glfwSetWindowShouldClose(m_window, GL_TRUE);
-		}
+        ImGui::PushID(1);
+        if (ImGui::RadioButton( "Joints", keyFlags[key_J] )) {
+            keyFlags[key_J] = ! keyFlags[key_J];
+            keyFlags[key_P] = false;
+        }
+        ImGui::PopID();
+
 
 		ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
@@ -854,6 +899,9 @@ bool A3::keyInputEvent (
             keyFlags[key_F] = true;
             eventHandled = true;
         }
+        if (key == GLFW_KEY_A){
+            resetAll();
+        }
     }
 	// Fill in with event handling code...
     if ( action == GLFW_RELEASE ) {
@@ -891,4 +939,9 @@ bool A3::keyInputEvent (
     }
 
 	return eventHandled;
+}
+
+void A3::resetAll(){
+    cout << "reset All" << endl;
+    return;
 }
