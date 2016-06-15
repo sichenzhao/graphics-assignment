@@ -373,7 +373,7 @@ void A3::guiLogic()
 // Update mesh specific shader uniforms:
 void A3::updateShaderUniforms(
 		const ShaderProgram & shader,
-		const GeometryNode & node,
+		GeometryNode & node,
 		const glm::mat4 & viewMatrix,
         const glm::mat4 parentM,
         const glm::mat4 virtualM,
@@ -381,6 +381,10 @@ void A3::updateShaderUniforms(
 ) {
     // virtualM for virtual sphere
 
+    bool imPicked = (m_pickedIDs.count(node.m_nodeId)>0);
+    if(imPicked){
+        node.rotate('x', jointAngle);
+    }
 	shader.enable();
 	{
         GLint location;
@@ -405,7 +409,7 @@ void A3::updateShaderUniforms(
             //-- Set Material values:
             location = shader.getUniformLocation("material.kd");
             vec3 kd = node.material.kd;
-            if(m_pickedIDs.count(node.m_nodeId)>0){
+            if(imPicked){
                 kd = vec3 (0.0f, 1.0f, 1.0f);
             }
             glUniform3fv(location, 1, value_ptr(kd));
@@ -457,6 +461,8 @@ void A3::draw() {
 
 	glDisable( GL_DEPTH_TEST );
 	renderArcCircle();
+
+    jointAngle = 0;
 }
 
 void A3::pickingHelper() {
@@ -497,7 +503,7 @@ void A3::pickingHelper() {
 }
 
 //----------------------------------------------------------------------------------------
-void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
+void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
     if(root.children.empty()) {
         return;
     }
@@ -521,14 +527,18 @@ void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
 	// could put a set of mutually recursive functions in this class, which
 	// walk down the tree from nodes of different types.
 
-	for (const SceneNode * node : root.children) {
+	for (SceneNode * node : root.children) {
 
 		if (node->m_nodeType != NodeType::GeometryNode) {
             renderSceneGraph(*node, parentM * node->trans);
 			continue;
         }
 
-		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+        if(root.m_nodeType != NodeType::JointNode){
+            m_pickedIDs.erase(node->m_nodeId);
+        }
+
+		GeometryNode * geometryNode = static_cast<GeometryNode *>(node);
 
         if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
             //cout << geometryNode->m_name << " got picked" << endl;
@@ -646,6 +656,9 @@ void A3::handleKMEvents() {
         // translate on z axis
         if(keyFlags[key_P]){
             w_translate = translate(w_translate, glm::vec3(0.0f, 0.0f, delta_yp));
+        }
+        if(keyFlags[key_J]){
+            jointAngle = delta_yp * 180.0f;
         }
     }
     if (mouseFlags[m_right]){

@@ -61,14 +61,16 @@ protected:
 
 	void initPerspectiveMatrix();
 	void uploadCommonSceneUniforms();
-	void renderSceneGraph(const SceneNode &node, glm::mat4 parentM);
+	void renderSceneGraph(SceneNode &node, glm::mat4 parentM);
 	void renderArcCircle();
-    void updateShaderUniforms(const ShaderProgram &shader, const GeometryNode & node, const glm::mat4 & viewMatrix, const glm::mat4 parentM, const glm::mat4 virtualM, const glm::mat4 worldTM);
+    void updateShaderUniforms(const ShaderProgram &shader, GeometryNode & node, const glm::mat4 & viewMatrix, const glm::mat4 parentM, const glm::mat4 virtualM, const glm::mat4 worldTM);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
 	glm::mat4 m_model;
 	glm::mat4 w_translate;
+
+    float jointAngle;
 
 	LightSource m_light;
 
