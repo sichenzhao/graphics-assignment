@@ -24,3 +24,21 @@ void JointNode::set_joint_y(double min, double init, double max) {
 	m_joint_y.init = init;
 	m_joint_y.max = max;
 }
+
+void JointNode::set_xAngle(float xAngle){
+    joint_xAngle = xAngle;
+    if(xAngle > m_joint_x.max){
+        joint_xAngle = m_joint_x.max;
+    }
+    if(xAngle < m_joint_x.min){
+        joint_xAngle = m_joint_x.min;
+    }
+}
+
+float JointNode::get_xAngle(){
+    return joint_xAngle;
+}
+
+float JointNode::get_yAngle(){
+    return joint_yAngle;
+}
