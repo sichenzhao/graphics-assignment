@@ -71,6 +71,7 @@ protected:
 	glm::mat4 w_translate;
 
     float jointAngle;
+    float jointAngle_y;
 
 	LightSource m_light;
 

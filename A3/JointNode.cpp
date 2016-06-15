@@ -1,4 +1,7 @@
 #include "JointNode.hpp"
+#include <iostream>
+
+using namespace std;
 
 //---------------------------------------------------------------------------------------
 JointNode::JointNode(const std::string& name)
@@ -16,6 +19,8 @@ void JointNode::set_joint_x(double min, double init, double max) {
 	m_joint_x.min = min;
 	m_joint_x.init = init;
 	m_joint_x.max = max;
+    joint_xAngle = init;
+   // this->rotate('x', init);
 }
 
 //---------------------------------------------------------------------------------------
@@ -23,15 +28,29 @@ void JointNode::set_joint_y(double min, double init, double max) {
 	m_joint_y.min = min;
 	m_joint_y.init = init;
 	m_joint_y.max = max;
+    joint_yAngle = init;
+    //this->rotate('y', init);
 }
 
 void JointNode::set_xAngle(float xAngle){
-    joint_xAngle = xAngle;
-    if(xAngle > m_joint_x.max){
+    joint_xAngle = joint_xAngle + xAngle;
+    if(joint_xAngle > m_joint_x.max){
         joint_xAngle = m_joint_x.max;
+        //cout << "over max " << joint_xAngle << endl;
     }
-    if(xAngle < m_joint_x.min){
+    if(joint_xAngle < m_joint_x.min){
         joint_xAngle = m_joint_x.min;
+        //cout << "below min " << joint_xAngle << endl;
+    }
+}
+
+void JointNode::set_yAngle(float yAngle){
+    joint_yAngle = joint_yAngle + yAngle;
+    if(joint_yAngle > m_joint_y.max){
+        joint_yAngle = m_joint_y.max;
+    }
+    if(joint_yAngle < m_joint_y.min){
+        joint_yAngle = m_joint_y.min;
     }
 }
 

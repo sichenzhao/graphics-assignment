@@ -382,9 +382,6 @@ void A3::updateShaderUniforms(
 
     bool imPicked = (m_pickedIDs.count(node.m_nodeId)>0);
 	shader.enable();
-    if(imPicked){
-        node.rotate('x', jointAngle);
-    }
 	{
         GLint location;
         //-- Set ModelView matrix:
@@ -462,6 +459,7 @@ void A3::draw() {
 	renderArcCircle();
 
     jointAngle = 0;
+    jointAngle_y = 0;
 }
 
 void A3::pickingHelper() {
@@ -525,15 +523,15 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
 	// could put a set of mutually recursive functions in this class, which
 	// walk down the tree from nodes of different types.
 
-	for (SceneNode * node : root.children) {
+    for (SceneNode * node : root.children) {
 
 
-            if (node->m_nodeType != NodeType::GeometryNode) {
-                renderSceneGraph(*node, parentM * node->tr);
-                continue;
-            }
+        if (node->m_nodeType != NodeType::GeometryNode) {
+            renderSceneGraph(*node, parentM * node->tr);
+            continue;
+        }
 
-		GeometryNode * geometryNode = static_cast<GeometryNode *>(node);
+        GeometryNode * geometryNode = static_cast<GeometryNode *>(node);
         geometryNode->parent = &root;
 
 
@@ -541,10 +539,13 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
             m_pickedIDs.erase(node->m_nodeId);
         } else {
             // root is joint, rotate
-            if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
                 JointNode* jointNode = (static_cast<JointNode *>(&root));
-                jointNode->set_xAngle(jointAngle);
-            }
+                if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
+                    jointNode->set_xAngle(jointAngle);
+                    jointNode->set_yAngle(jointAngle_y);
+                }
+                parentM = rotate(parentM, glm::radians(jointNode->get_xAngle()), glm::vec3(1.0f, 0.0f, 0.0f));
+                parentM = rotate(parentM, glm::radians(jointNode->get_yAngle()), glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
 		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM);
@@ -674,6 +675,9 @@ void A3::handleKMEvents() {
             // delta_y -> rotation by x axis
             theta = delta_y / m_windowHeight * 180.0f;
             m_rootNode->trans = rotate(m_rootNode->trans, glm::radians(theta), glm::vec3(1.0f, 0.0f, 0.0f));
+        }
+        if(keyFlags[key_J]){
+            jointAngle_y = delta_xp * 180.0f;
         }
     }
     // keeps track of previous x, y positions

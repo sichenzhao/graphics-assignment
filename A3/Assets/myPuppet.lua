@@ -20,7 +20,7 @@ torso:scale(0.7,0.7,0.7);
 torso:translate(0.0, -0.2, 0.0);
 
 -- joint torso neck
-jtn = gr.joint('jtn', {-5, 0, 5}, {-5, 0, 5})
+jtn = gr.joint('jtn', {-15, 15, 15}, {-15, 0, 15})
 torso:add_child(jtn)
 jtn:translate(0.0, 0.17, 0.0);
 
@@ -30,7 +30,7 @@ neck:scale( 0.25, 0.25, 0.25 )
 neck:scale(0.1,0.1,0.1)
 neck:set_material(blue)
 
-jnh = gr.joint('jnh', {-5,0,5}, {-5,0,5})
+jnh = gr.joint('jnh', {-95,0,5}, {-70,0,70})
 neck:add_child(jnh)
 
 head = gr.mesh('sphere', 'head')
@@ -39,22 +39,22 @@ head:scale( 0.25, 0.25, 0.25 )
 head:scale(0.4, 0.4, 0.4)
 head:set_material(red)
 
-jhlr = gr.joint('jhlr', {0,0,0}, {-5,0,5})
+jhlr = gr.joint('jhlr', {-45,0,45}, {0,0,0})
 head:add_child(jhlr)
-jhlr:translate(-0.15,0.03,0)
+jhlr:translate(-0.08,0.06,0)
 
 leftEar = gr.mesh('sphere', 'leftEar')
 jhlr:add_child(leftEar)
-leftEar:scale(0.059, 0.058, 0.0001)
+leftEar:scale(0.0059, 0.058, 0.0001)
 leftEar:set_material(blue)
 
-jhrr = gr.joint('jhrr', {0,0,0}, {-5,0,5})
+jhrr = gr.joint('jhrr', {-45,0,45}, {0,0,0})
 head:add_child(jhrr)
-jhrr:translate(0.15,0.03,0)
+jhrr:translate(0.08,0.06,0)
 
 rightEar = gr.mesh('sphere', 'rightEar')
 jhrr:add_child(rightEar)
-rightEar:scale(0.059, 0.058, 0.0001)
+rightEar:scale(0.0059, 0.058, 0.0001)
 rightEar:set_material(blue)
 
 leftEye = gr.mesh('cube', 'leftEye')
