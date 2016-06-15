@@ -20,13 +20,12 @@ torso:scale(0.5,1.0,0.5);
 -- joint torso neck
 jtn = gr.joint('jtn', {-5, 0, 5}, {-5, 0, 5})
 torso:add_child(jtn)
+jtn:translate(0.0, 0.6, 0.0);
 
 neck = gr.mesh('sphere', 'neck')
 jtn:add_child(neck)
---torso:add_child(neck)
 neck:scale(1.0/0.5, 1.0, 1.0/0.5)
 neck:scale(0.15, 0.3, 0.15)
-neck:translate(0.0, 0.6, 0.0)
 neck:set_material(blue)
 
 head = gr.mesh('cube', 'head')

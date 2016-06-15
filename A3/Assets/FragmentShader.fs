@@ -52,6 +52,13 @@ vec3 phongModel(vec3 fragPosition, vec3 fragNormal) {
     return ambientIntensity + light.rgbIntensity * (diffuse + specular);
 }
 
+uniform bool picking;
+uniform vec3 colour;
+
 void main() {
+if(!picking){
 	fragColour = vec4(phongModel(fs_in.position_ES, fs_in.normal_ES), 1.0);
+} else {
+    fragColour = vec4( colour, 1.0 );
+}
 }

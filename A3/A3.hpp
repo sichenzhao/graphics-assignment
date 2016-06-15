@@ -6,6 +6,9 @@
 #include "cs488-framework/MeshConsolidator.hpp"
 
 #include "SceneNode.hpp"
+#include "GeometryNode.hpp"
+
+#include <unordered_set>
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -42,6 +45,11 @@ protected:
     double m_px, m_py;
     void handleKMEvents();
 
+    bool m_pickingMode;
+    bool j_clicked;
+    void pickingHelper();
+    std::unordered_set<int> m_pickedIDs;
+
 	//-- One time initialization methods:
 	void processLuaSceneFile(const std::string & filename);
 	void createShaderProgram();
@@ -55,6 +63,7 @@ protected:
 	void uploadCommonSceneUniforms();
 	void renderSceneGraph(const SceneNode &node, glm::mat4 parentM);
 	void renderArcCircle();
+    void updateShaderUniforms(const ShaderProgram &shader, const GeometryNode & node, const glm::mat4 & viewMatrix, const glm::mat4 parentM, const glm::mat4 virtualM, const glm::mat4 worldTM);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;

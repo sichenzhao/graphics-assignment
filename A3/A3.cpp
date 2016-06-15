@@ -34,6 +34,7 @@ A3::A3(const std::string & luaSceneFile)
 {
         memset(keyFlags, 0, sizeof(bool)*12);
         memset(mouseFlags, 0, sizeof(bool)*3);
+        m_pickingMode = false;
 
 }
 
@@ -293,28 +294,28 @@ void A3::initLightSources() {
 void A3::uploadCommonSceneUniforms() {
 	m_shader.enable();
 	{
-		//-- Set Perpsective matrix uniform for the scene:
-		GLint location = m_shader.getUniformLocation("Perspective");
-		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
-		CHECK_GL_ERRORS;
+            //-- Set Perpsective matrix uniform for the scene:
+            GLint location = m_shader.getUniformLocation("Perspective");
+            glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
+            CHECK_GL_ERRORS;
 
 
-		//-- Set LightSource uniform for the scene:
-		{
-			location = m_shader.getUniformLocation("light.position");
-			glUniform3fv(location, 1, value_ptr(m_light.position));
-			location = m_shader.getUniformLocation("light.rgbIntensity");
-			glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
-			CHECK_GL_ERRORS;
-		}
+            //-- Set LightSource uniform for the scene:
+            {
+                location = m_shader.getUniformLocation("light.position");
+                glUniform3fv(location, 1, value_ptr(m_light.position));
+                location = m_shader.getUniformLocation("light.rgbIntensity");
+                glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
+                CHECK_GL_ERRORS;
+            }
 
-		//-- Set background light ambient intensity
-		{
-			location = m_shader.getUniformLocation("ambientIntensity");
-			vec3 ambientIntensity(0.05f);
-			glUniform3fv(location, 1, value_ptr(ambientIntensity));
-			CHECK_GL_ERRORS;
-		}
+            //-- Set background light ambient intensity
+            {
+                location = m_shader.getUniformLocation("ambientIntensity");
+                vec3 ambientIntensity(0.05f);
+                glUniform3fv(location, 1, value_ptr(ambientIntensity));
+                CHECK_GL_ERRORS;
+            }
 	}
 	m_shader.disable();
 }
@@ -328,7 +329,7 @@ void A3::appLogic()
 	// Place per frame, application logic here ...
     handleKMEvents();
 
-	uploadCommonSceneUniforms();
+    uploadCommonSceneUniforms();
 }
 
 //----------------------------------------------------------------------------------------
@@ -370,7 +371,7 @@ void A3::guiLogic()
 
 //----------------------------------------------------------------------------------------
 // Update mesh specific shader uniforms:
-static void updateShaderUniforms(
+void A3::updateShaderUniforms(
 		const ShaderProgram & shader,
 		const GeometryNode & node,
 		const glm::mat4 & viewMatrix,
@@ -382,33 +383,53 @@ static void updateShaderUniforms(
 
 	shader.enable();
 	{
-		//-- Set ModelView matrix:
-		GLint location = shader.getUniformLocation("ModelView");
+        GLint location;
+        //-- Set ModelView matrix:
+        location = shader.getUniformLocation("ModelView");
         // last <-- first transformation
         // node.trans has to be right most for scaling first
-		mat4 modelView = viewMatrix * worldTM * parentM * virtualM * node.trans;
-		glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
-		CHECK_GL_ERRORS;
+        mat4 modelView = viewMatrix * worldTM * parentM * virtualM * node.trans;
+        glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
+        CHECK_GL_ERRORS;
 
-		//-- Set NormMatrix:
-		location = shader.getUniformLocation("NormalMatrix");
-		mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
-		glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
-		CHECK_GL_ERRORS;
+        //-- Set NormMatrix:
+        location = shader.getUniformLocation("NormalMatrix");
+        mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
+        glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
+        CHECK_GL_ERRORS;
 
 
-		//-- Set Material values:
-		location = shader.getUniformLocation("material.kd");
-		vec3 kd = node.material.kd;
-		glUniform3fv(location, 1, value_ptr(kd));
-		CHECK_GL_ERRORS;
-		location = shader.getUniformLocation("material.ks");
-		vec3 ks = node.material.ks;
-		glUniform3fv(location, 1, value_ptr(ks));
-		CHECK_GL_ERRORS;
-		location = shader.getUniformLocation("material.shininess");
-		glUniform1f(location, node.material.shininess);
-		CHECK_GL_ERRORS;
+        if(!m_pickingMode){
+            location = shader.getUniformLocation("picking");
+            glUniform1f(location, false);
+            //-- Set Material values:
+            location = shader.getUniformLocation("material.kd");
+            vec3 kd = node.material.kd;
+            if(m_pickedIDs.count(node.m_nodeId)>0){
+                kd = vec3 (0.0f, 1.0f, 1.0f);
+            }
+            glUniform3fv(location, 1, value_ptr(kd));
+            CHECK_GL_ERRORS;
+            location = shader.getUniformLocation("material.ks");
+            vec3 ks = node.material.ks;
+            glUniform3fv(location, 1, value_ptr(ks));
+            CHECK_GL_ERRORS;
+            location = shader.getUniformLocation("material.shininess");
+            glUniform1f(location, node.material.shininess);
+            CHECK_GL_ERRORS;
+        } else {
+            int r = (node.m_nodeId & 0x000000FF) >>  0;
+            int g = (node.m_nodeId & 0x0000FF00) >>  8;
+            int b = (node.m_nodeId & 0x00FF0000) >> 16;
+
+            //cout << "(r,g,b) = " << r << " " << g << " " << b << endl;
+
+            location = shader.getUniformLocation("picking");
+            glUniform1f(location, true);
+            location = shader.getUniformLocation("colour");
+            glUniform3f(location, r/255.0f, g/255.0f, b/255.0f);
+            CHECK_GL_ERRORS;
+        }
 
 	}
 	shader.disable();
@@ -422,8 +443,13 @@ static void updateShaderUniforms(
  */
 void A3::draw() {
 
+    if (m_pickingMode) {
+        pickingHelper();
+    }
+
 	glEnable( GL_DEPTH_TEST );
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindVertexArray(m_vao_meshData);
 	renderSceneGraph(*m_rootNode, m_rootNode->trans);
 	glBindVertexArray(0);
@@ -431,6 +457,43 @@ void A3::draw() {
 
 	glDisable( GL_DEPTH_TEST );
 	renderArcCircle();
+}
+
+void A3::pickingHelper() {
+    // clear screen
+    //float defaultClear = 0.0f;
+    //glClearColor(defaultClear, defaultClear, defaultClear, defaultClear);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glUseProgram(pickingProgramID); // use a different shader
+
+    // Only the positions are needed (not the UVs and normals)
+    //glEnableVertexAttribArray(0);
+
+    glEnable( GL_DEPTH_TEST );
+
+    glBindVertexArray(m_vao_meshData);
+    renderSceneGraph(*m_rootNode, m_rootNode->trans);
+    glBindVertexArray(0);
+
+    glDisable( GL_DEPTH_TEST );
+
+    //cout << "picking" << endl;
+
+    unsigned char data[4];
+    //cout << m_xPos << " " << m_windowHeight - m_yPos << endl;
+    glReadPixels(m_xPos, m_windowHeight-m_yPos,1,1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    //cout << (int)data[0] << (int)data[1] << (int)data[2] << endl;  
+    int pickedID = data[0] + data[1] * 256 + data[2] * 256*256;
+    if(m_pickedIDs.count(pickedID)>0){
+        m_pickedIDs.erase(pickedID);
+        cout << pickedID << "got unpicked" << endl;
+    } else {
+        m_pickedIDs.insert(pickedID);
+        cout << pickedID << "got picked" << endl;
+    }
+
+    m_pickingMode = false;
 }
 
 //----------------------------------------------------------------------------------------
@@ -461,11 +524,15 @@ void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
 	for (const SceneNode * node : root.children) {
 
 		if (node->m_nodeType != NodeType::GeometryNode) {
-            renderSceneGraph(*node, parentM);
+            renderSceneGraph(*node, parentM * node->trans);
 			continue;
         }
 
 		const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
+
+        if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
+            //cout << geometryNode->m_name << " got picked" << endl;
+        }
 
 		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
         // cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
@@ -489,23 +556,25 @@ void A3::renderSceneGraph(const SceneNode & root, glm::mat4 parentM) {
 //----------------------------------------------------------------------------------------
 // Draw the trackball circle.
 void A3::renderArcCircle() {
-	glBindVertexArray(m_vao_arcCircle);
+    if(!m_pickingMode){
+        glBindVertexArray(m_vao_arcCircle);
 
-	m_shader_arcCircle.enable();
-		GLint m_location = m_shader_arcCircle.getUniformLocation( "M" );
-		float aspect = float(m_framebufferWidth)/float(m_framebufferHeight);
-		glm::mat4 M;
-		if( aspect > 1.0 ) {
-			M = glm::scale( glm::mat4(), glm::vec3( 0.5/aspect, 0.5, 1.0 ) );
-		} else {
-			M = glm::scale( glm::mat4(), glm::vec3( 0.5, 0.5*aspect, 1.0 ) );
-		}
-		glUniformMatrix4fv( m_location, 1, GL_FALSE, value_ptr( M ) );
-		glDrawArrays( GL_LINE_LOOP, 0, CIRCLE_PTS );
-	m_shader_arcCircle.disable();
+        m_shader_arcCircle.enable();
+        GLint m_location = m_shader_arcCircle.getUniformLocation( "M" );
+        float aspect = float(m_framebufferWidth)/float(m_framebufferHeight);
+        glm::mat4 M;
+        if( aspect > 1.0 ) {
+            M = glm::scale( glm::mat4(), glm::vec3( 0.5/aspect, 0.5, 1.0 ) );
+        } else {
+            M = glm::scale( glm::mat4(), glm::vec3( 0.5, 0.5*aspect, 1.0 ) );
+        }
+        glUniformMatrix4fv( m_location, 1, GL_FALSE, value_ptr( M ) );
+        glDrawArrays( GL_LINE_LOOP, 0, CIRCLE_PTS );
+        m_shader_arcCircle.disable();
 
-	glBindVertexArray(0);
-	CHECK_GL_ERRORS;
+        glBindVertexArray(0);
+        CHECK_GL_ERRORS;
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -558,13 +627,19 @@ void A3::handleKMEvents() {
     double delta_y = m_yPos - m_py;
 
     double delta_xp = delta_x / m_windowWidth;
-    double delta_yp = delta_y / m_windowWidth;
+    double delta_yp = delta_y / m_windowHeight;
 
     if (mouseFlags[m_left]){
         // translate on x and y axis
         if(keyFlags[key_P]){
             cout << delta_x << " " << delta_y << endl;
             w_translate = translate(w_translate, glm::vec3(delta_xp, -delta_yp, 0.0f));
+        }
+
+        // picking
+        if(keyFlags[key_J] && !j_clicked){
+            j_clicked = true;
+            m_pickingMode = true;
         }
     }
     if (mouseFlags[m_middle]){
@@ -605,12 +680,13 @@ bool A3::mouseButtonInputEvent (
                 if (button == GLFW_MOUSE_BUTTON_LEFT){
                     if (actions == GLFW_PRESS) {
                             mouseFlags[m_left] = true;
-                            cout << "left mouse pressed" << endl;
+                            //cout << "left mouse pressed" << endl;
                     }
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_left] = false;
                             cout << "left mouse released" << endl;
+                            j_clicked = false;
                     }
                 }
                 if (button == GLFW_MOUSE_BUTTON_RIGHT){
@@ -697,6 +773,12 @@ bool A3::keyInputEvent (
             keyFlags[key_P] = true;
             eventHandled = true;
         }
+        if (key == GLFW_KEY_J) {
+            //cout << "J key pressed" << endl;
+            // Joint
+            keyFlags[key_J] = true;
+            eventHandled = true;
+        }
     }
 	// Fill in with event handling code...
     if ( action == GLFW_RELEASE ) {
@@ -704,6 +786,13 @@ bool A3::keyInputEvent (
             cout << "P key released" << endl;
             keyFlags[key_P] = false;
             eventHandled = true;
+        }
+        if (key == GLFW_KEY_J) {
+            //cout << "J key released" << endl;
+            // Joint
+            keyFlags[key_J] = false;
+            eventHandled = true;
+            j_clicked = false;
         }
     }
 
