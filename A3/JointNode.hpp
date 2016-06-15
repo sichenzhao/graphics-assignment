@@ -14,6 +14,15 @@ public:
 		double min, init, max;
 	};
 
-
 	JointRange m_joint_x, m_joint_y;
+
+    void set_xAngle(float angle);
+    void set_yAngle(float angle);
+
+    float get_xAngle();
+    float get_yAngle();
+
+private:
+    float joint_xAngle;
+    float joint_yAngle;
 };

@@ -277,7 +277,6 @@ void A3::initPerspectiveMatrix()
 
 //----------------------------------------------------------------------------------------
 void A3::initViewMatrix() {
-    // TODO: set correct View
     // eye, center, up
     m_view = glm::lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, -1.0f),
 			vec3(0.0f, 1.0f, 0.0f));
@@ -382,10 +381,10 @@ void A3::updateShaderUniforms(
     // virtualM for virtual sphere
 
     bool imPicked = (m_pickedIDs.count(node.m_nodeId)>0);
+	shader.enable();
     if(imPicked){
         node.rotate('x', jointAngle);
     }
-	shader.enable();
 	{
         GLint location;
         //-- Set ModelView matrix:
@@ -513,7 +512,6 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
 	// Bind the VAO once here, and reuse for all GeometryNode rendering below.
 	//glBindVertexArray(m_vao_meshData);
 
-    // TODO: render scene correctly
 	// This is emphatically *NOT* how you should be drawing the scene graph in
 	// your final implementation.  This is a non-hierarchical demonstration
 	// in which we assume that there is a list of GeometryNodes living directly
@@ -529,19 +527,24 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
 
 	for (SceneNode * node : root.children) {
 
+
 		if (node->m_nodeType != NodeType::GeometryNode) {
             renderSceneGraph(*node, parentM * node->trans);
-			continue;
-        }
-
-        if(root.m_nodeType != NodeType::JointNode){
-            m_pickedIDs.erase(node->m_nodeId);
+            continue;
         }
 
 		GeometryNode * geometryNode = static_cast<GeometryNode *>(node);
+        geometryNode->parent = &root;
 
-        if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
-            //cout << geometryNode->m_name << " got picked" << endl;
+
+        if(root.m_nodeType != NodeType::JointNode){
+            m_pickedIDs.erase(node->m_nodeId);
+        } else {
+            // root is joint, rotate
+            if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
+                JointNode* jointNode = (static_cast<JointNode *>(&root));
+                jointNode->set_xAngle(jointAngle);
+            }
         }
 
 		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
