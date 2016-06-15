@@ -7,6 +7,7 @@
 
 #include "SceneNode.hpp"
 #include "GeometryNode.hpp"
+#include "JointNode.hpp"
 
 #include <unordered_set>
 
@@ -74,6 +75,7 @@ protected:
 
     float jointAngle;
     float jointAngle_y;
+    std::unordered_set<JointNode*> m_jointNodes;
 
 	LightSource m_light;
 
@@ -103,4 +105,7 @@ protected:
 	std::shared_ptr<SceneNode> m_rootNode;
 
     void resetAll();
+    void resetPosition();
+    void resetOrientation();
+    void resetJoint();
 };

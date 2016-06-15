@@ -359,13 +359,13 @@ void A3::guiLogic()
 		// Add more gui elements here here ...
         if( ImGui::BeginMenu("Application") ) {
             if(ImGui::Button("Reset Position")){
-                keyFlags[key_I] = !keyFlags[key_I];
+                resetPosition();
             }
             if(ImGui::Button("Reset Orientation")){
-                keyFlags[key_O] = !keyFlags[key_O];
+                resetOrientation();
             }
             if(ImGui::Button("Reset Joints")){
-                keyFlags[key_N] = !keyFlags[key_N];
+                resetJoint();
             }
             if(ImGui::Button("Reset ALL")){
                 resetAll();
@@ -397,6 +397,8 @@ void A3::guiLogic()
         if (ImGui::RadioButton( "Position/Prientation", keyFlags[key_P] )) {
             keyFlags[key_P] = ! keyFlags[key_P];
             keyFlags[key_J] = false;
+            j_clicked = false;
+            m_pickedIDs.clear();
         }
         ImGui::PopID();
 
@@ -620,13 +622,19 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
             m_pickedIDs.erase(node->m_nodeId);
         } else {
             // root is joint, rotate
-                JointNode* jointNode = (static_cast<JointNode *>(&root));
-                if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
-                    jointNode->set_xAngle(jointAngle);
-                    jointNode->set_yAngle(jointAngle_y);
-                }
-                parentM = rotate(parentM, glm::radians(jointNode->get_xAngle()), glm::vec3(1.0f, 0.0f, 0.0f));
-                parentM = rotate(parentM, glm::radians(jointNode->get_yAngle()), glm::vec3(0.0f, 1.0f, 0.0f));
+            JointNode* jointNode = (static_cast<JointNode *>(&root));
+            if(m_jointNodes.count(jointNode)<=0){
+                m_jointNodes.insert(jointNode);
+                cout << "insert " <<  jointNode->m_name << endl;
+            }
+            if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
+                float angle_x = jointAngle + jointNode->get_xAngle();
+                float angle_y = jointAngle_y + jointNode->get_yAngle();
+                jointNode->set_xAngle(angle_x);
+                jointNode->set_yAngle(angle_y);
+            }
+            parentM = rotate(parentM, glm::radians(jointNode->get_xAngle()), glm::vec3(1.0f, 0.0f, 0.0f));
+            parentM = rotate(parentM, glm::radians(jointNode->get_yAngle()), glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
 		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM);
@@ -749,6 +757,7 @@ void A3::handleKMEvents() {
     if (mouseFlags[m_right]){
         // virtual trackball handler
         if(keyFlags[key_P]){
+            /**
             vec3 S = get_arcball_vector(m_px, m_py);
             vec3 T = get_arcball_vector(m_xPos, m_yPos);
             float angle = acos(std::min(1.0f, glm::dot(S, T)));
@@ -756,6 +765,7 @@ void A3::handleKMEvents() {
             axis_in_camera_coord = normalize(axis_in_camera_coord);
             vec4 axisInWorldFrame = vec4(axis_in_camera_coord, 0.0f) * inverse(m_view);
             m_rootNode->rotate({axisInWorldFrame.x, axisInWorldFrame.y,  axisInWorldFrame.z}, degrees(angle));
+            **/
         }
         if(keyFlags[key_J]){
             jointAngle_y = delta_xp * 180.0f;
@@ -899,8 +909,21 @@ bool A3::keyInputEvent (
             keyFlags[key_F] = true;
             eventHandled = true;
         }
+        if (key == GLFW_KEY_I) {
+            resetPosition();
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_O) {
+            resetOrientation();
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_N) {
+            resetJoint();
+            eventHandled = true;
+        }
         if (key == GLFW_KEY_A){
             resetAll();
+            eventHandled = true;
         }
     }
 	// Fill in with event handling code...
@@ -915,6 +938,7 @@ bool A3::keyInputEvent (
             keyFlags[key_J] = false;
             eventHandled = true;
             j_clicked = false;
+            m_pickedIDs.clear();
         }
         if (key == GLFW_KEY_C) {
             // Circle
@@ -942,6 +966,24 @@ bool A3::keyInputEvent (
 }
 
 void A3::resetAll(){
+    resetPosition();
+    resetOrientation();
+    resetJoint();
     cout << "reset All" << endl;
     return;
+}
+
+void A3::resetPosition(){
+    w_translate = mat4(1.0f);
+}
+
+void A3::resetOrientation(){
+}
+
+void A3::resetJoint(){
+    for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
+        (*it)->set_xAngle((*it)->m_joint_x.init);
+        (*it)->set_yAngle((*it)->m_joint_y.init);
+        cout << "reset " <<  (*it)->m_name << endl;
+    }
 }
