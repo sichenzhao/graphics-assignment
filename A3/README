@@ -33,6 +33,8 @@ I also added rotation angles against x and y axis in JointNode class, in order
 to keep tracks of how many degrees we changed for node to make sure it's always
 in between min and max.
 
+I used two stacks keeps track of all joints angles to do Undo and Redo.
+
 2. Overview Of Puppet Model
 
 My model is inspired by Snorlax in pokemon. 
@@ -50,4 +52,5 @@ Note: although, assignment requirement mentions that we can apply y axis rotatio
 on head. I figure that rotation against y axis is reasonable for arms, hands, and
 fingers too. So I added a little range for all three of them.
 
-Features not implemented: Virtual Sphere/ Redo + Undo
+Features bug: Redo/Undo has bug sometimes
+Features not implemented: Virtual Sphere

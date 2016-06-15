@@ -74,6 +74,8 @@ A3::~A3()
  */
 void A3::init()
 {
+    firstcall = true;
+    consecRedoUndo = false;
 	// Set the background colour.
 	glClearColor(0.35, 0.35, 0.35, 1.0);
 
@@ -515,6 +517,10 @@ void A3::draw() {
 	renderSceneGraph(*m_rootNode, m_rootNode->trans);
 	glBindVertexArray(0);
 
+    if(firstcall) {
+        pushUndo();
+    }
+
     if(keyFlags[key_Z]){
         glDisable( GL_DEPTH_TEST );
     }
@@ -525,6 +531,7 @@ void A3::draw() {
 
     jointAngle = 0;
     jointAngle_y = 0;
+    firstcall = false;
 }
 
 void A3::pickingHelper() {
@@ -732,6 +739,18 @@ void A3::handleKMEvents() {
     double delta_xp = delta_x / m_windowWidth;
     double delta_yp = delta_y / m_windowHeight;
 
+    if (keyFlags[key_R]){
+        // do redo
+        exRedo();
+        keyFlags[key_R] = false;
+    }
+
+    if (keyFlags[key_U]){
+        // do undo 
+        exUndo();
+        keyFlags[key_U] = false;
+    }
+
     if (mouseFlags[m_left]){
         // translate on x and y axis
         if(keyFlags[key_P]){
@@ -808,6 +827,9 @@ bool A3::mouseButtonInputEvent (
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_right] = false;
+                            if(keyFlags[key_J]) {
+                                pushUndo();
+                            }
                             //cout << "right mouse released" << endl;
                     }
                 }
@@ -819,6 +841,9 @@ bool A3::mouseButtonInputEvent (
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_middle] = false;
+                            if(keyFlags[key_J]) {
+                                pushUndo();
+                            }
                             //cout << "middle mouse released" << endl;
                     }
                 }
@@ -922,6 +947,16 @@ bool A3::keyInputEvent (
             resetAll();
             eventHandled = true;
         }
+        if (key == GLFW_KEY_R) {
+            // REDO
+            keyFlags[key_R] = true;
+            eventHandled = true;
+        }
+        if (key == GLFW_KEY_U) {
+            // UNDO
+            keyFlags[key_U] = true;
+            eventHandled = true;
+        }
     }
 	// Fill in with event handling code...
     if ( action == GLFW_RELEASE ) {
@@ -961,6 +996,48 @@ bool A3::keyInputEvent (
 	return eventHandled;
 }
 
+void A3::pushUndo() {
+    resetRedo();
+    cout << "push undo" << endl;
+    map<JointNode*, pair<float, float> > aState;
+    for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
+        aState[*it] = make_pair((*it)->get_xAngle(), (*it)->get_yAngle());
+    }
+    undoStack.push(aState);
+}
+
+void A3::exUndo() {
+    if(undoStack.empty()){
+        cout << "cannot undo anymore" << endl;
+        return;
+    }
+    map<JointNode*, pair<float, float> > aState = undoStack.top();
+    undoStack.pop();
+    redoStack.push(aState);
+    for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
+        pair<float, float> xy = aState[(*it)];
+        (*it)->set_xAngle(xy.first);
+        (*it)->set_yAngle(xy.second);
+    }
+    cout << "ex undo" << endl;
+}
+
+void A3::exRedo() {
+    if(redoStack.empty()){
+        cout << "cannot redo anymore" << endl;
+        return;
+    }
+    map<JointNode*, pair<float, float> > aState = redoStack.top();
+    redoStack.pop();
+    undoStack.push(aState);
+    for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
+        pair<float, float> xy = aState[(*it)];
+        (*it)->set_xAngle(xy.first);
+        (*it)->set_yAngle(xy.second);
+    }
+    cout << "ex redo" << endl;
+}
+
 void A3::resetAll(){
     resetPosition();
     resetOrientation();
@@ -976,9 +1053,22 @@ void A3::resetPosition(){
 void A3::resetOrientation(){
 }
 
+void A3::resetRedo(){
+    while(!redoStack.empty()){
+        redoStack.pop();
+    }
+}
+
+void A3::resetRedoUndo(){
+    while(!undoStack.empty()){
+        undoStack.pop();
+    }
+}
+
 void A3::resetJoint(){
     for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
         (*it)->set_xAngle((*it)->m_joint_x.init);
         (*it)->set_yAngle((*it)->m_joint_y.init);
     }
+    resetRedoUndo();
 }

@@ -10,6 +10,8 @@
 #include "JointNode.hpp"
 
 #include <unordered_set>
+#include <stack>
+#include <map>
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -73,9 +75,18 @@ protected:
 
     bool keySelected;
 
+    bool firstcall;
     float jointAngle;
     float jointAngle_y;
     std::unordered_set<JointNode*> m_jointNodes;
+    std::stack< std::map<JointNode*, std::pair<float, float> > > undoStack;
+    std::stack< std::map<JointNode*, std::pair<float, float> > > redoStack;
+    void pushUndo();
+    bool consecRedoUndo;
+    void exUndo();
+    void exRedo();
+    void resetRedo();
+    void resetRedoUndo();
 
 	LightSource m_light;
 
