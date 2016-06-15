@@ -375,9 +375,9 @@ void A3::updateShaderUniforms(
 		const ShaderProgram & shader,
 		GeometryNode & node,
 		const glm::mat4 & viewMatrix,
-        const glm::mat4 parentM,
-        const glm::mat4 virtualM,
-        const glm::mat4 worldTM
+        const glm::mat4 parentM
+        //const glm::mat4 virtualM,
+        //const glm::mat4 worldTM
 ) {
     // virtualM for virtual sphere
 
@@ -392,7 +392,7 @@ void A3::updateShaderUniforms(
         location = shader.getUniformLocation("ModelView");
         // last <-- first transformation
         // node.trans has to be right most for scaling first
-        mat4 modelView = viewMatrix * worldTM * parentM * virtualM * node.trans;
+        mat4 modelView = viewMatrix * w_translate * parentM * m_model * node.trans;
         glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
         CHECK_GL_ERRORS;
 
@@ -530,7 +530,7 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
 	for (SceneNode * node : root.children) {
 
 		if (node->m_nodeType != NodeType::GeometryNode) {
-            renderSceneGraph(*node, parentM * node->trans);
+            renderSceneGraph(*node, parentM * node->tr);
 			continue;
         }
 
@@ -544,7 +544,7 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
             //cout << geometryNode->m_name << " got picked" << endl;
         }
 
-		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM, m_model, w_translate);
+		updateShaderUniforms(m_shader, *geometryNode, m_view, parentM);
         // cout << "prep render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
 
 		// Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
@@ -557,7 +557,7 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
 		m_shader.disable();
         //cout << "finish render " << geometryNode->m_name << "'s mesh " << geometryNode->meshId << endl;
 
-        renderSceneGraph(*geometryNode, parentM * node->trans);
+        renderSceneGraph(*geometryNode, parentM * node->tr);
 	}
 
 	//glBindVertexArray(0);

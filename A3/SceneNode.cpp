@@ -35,6 +35,7 @@ SceneNode::SceneNode(const SceneNode & other)
 	  trans(other.trans),
 	  invtrans(other.invtrans)
 {
+	tr = scaleM = mat4(1.0f);
 	for(SceneNode * child : other.children) {
 		this->children.push_front(new SceneNode(*child));
 	}
@@ -92,16 +93,19 @@ void SceneNode::rotate(char axis, float angle) {
 	}
 	mat4 rot_matrix = glm::rotate(degreesToRadians(angle), rot_axis);
 	trans = rot_matrix * trans;
+	tr = rot_matrix * tr;
 }
 
 //---------------------------------------------------------------------------------------
 void SceneNode::scale(const glm::vec3 & amount) {
 	trans = glm::scale(amount) * trans;
+	scaleM = glm::scale(amount) * scaleM;
 }
 
 //---------------------------------------------------------------------------------------
 void SceneNode::translate(const glm::vec3& amount) {
 	trans = glm::translate(amount) * trans;
+	tr = glm::translate(amount) * tr;
 }
 
 

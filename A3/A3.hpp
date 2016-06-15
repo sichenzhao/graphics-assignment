@@ -63,7 +63,7 @@ protected:
 	void uploadCommonSceneUniforms();
 	void renderSceneGraph(SceneNode &node, glm::mat4 parentM);
 	void renderArcCircle();
-    void updateShaderUniforms(const ShaderProgram &shader, GeometryNode & node, const glm::mat4 & viewMatrix, const glm::mat4 parentM, const glm::mat4 virtualM, const glm::mat4 worldTM);
+    void updateShaderUniforms(const ShaderProgram &shader, GeometryNode & node, const glm::mat4 & viewMatrix, const glm::mat4 parentM);
 
 	glm::mat4 m_perpsective;
 	glm::mat4 m_view;
