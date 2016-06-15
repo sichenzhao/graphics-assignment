@@ -1,0 +1,53 @@
+Compilation
+To compile A3 program, you just need to do following command in /A3 directory
+    1. premake4 gmake
+    2. make
+Two commands above will generate an executable file 'A3' in /A3 directory
+There is no change on premake4.lua or Makefile.
+Note: This command has to be done in condition that shared library is built. 
+      (means that you have to run make successfully in /cs488 directory)
+
+After generating the A3 executable file, you can just execute it by running
+command: './A3 Assets/puppet.lua'
+
+I finished this assignment on lab computer /gl17
+
+Manual
+Following the assignment requirements.
+
+By mouse, you can select only either Joint or Position/Orientation as mode,
+but using keyboard shortcut, there is no limit of how many keys or mouse are
+clicked. Therefore, you can select multiple modes by using keyboard.
+
+1. Change Of DataStructures
+
+I used unodered_set to track which node is picked, and where the pointers of all
+JointNode's are. 
+
+I modified SceneNode class so that its trans matrix is splitted into scale 
+matrix and translate/rotation matrix. I did this in order to pass only parent's
+translate and rotation down to children instead of passing scale down to its 
+children, to avoid the disorder of scaling and translate/rotate matrix.
+
+I also added rotation angles against x and y axis in JointNode class, in order 
+to keep tracks of how many degrees we changed for node to make sure it's always
+in between min and max.
+
+2. Overview Of Puppet Model
+
+My model is inspired by Snorlax in pokemon. 
+
+It is hierarchical model looks like ModelGraph.png.
+
+In the model graph, I represent the parent-child relationship as arrows from 
+parent to its children. Also, I mimic the joint nodes, and mark all GeometryNode
+who has a direct JointNode parent as green.
+In other words, my model has exactly 15 DOF, which are head, left ear, right ear,
+left arm, right arm, left hand, right hand, left finger * 3, right finger * 3, 
+left leg and right leg.
+
+Note: although, assignment requirement mentions that we can apply y axis rotation
+on head. I figure that rotation against y axis is reasonable for arms, hands, and
+fingers too. So I added a little range for all three of them.
+
+Features not implemented: Virtual Sphere/ Redo + Undo

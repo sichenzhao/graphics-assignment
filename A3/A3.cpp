@@ -555,10 +555,10 @@ void A3::pickingHelper() {
     int pickedID = data[0] + data[1] * 256 + data[2] * 256*256;
     if(m_pickedIDs.count(pickedID)>0){
         m_pickedIDs.erase(pickedID);
-        cout << pickedID << "got unpicked" << endl;
+        //cout << pickedID << "got unpicked" << endl;
     } else {
         m_pickedIDs.insert(pickedID);
-        cout << pickedID << "got picked" << endl;
+        //cout << pickedID << "got picked" << endl;
     }
 
     m_pickingMode = false;
@@ -625,7 +625,7 @@ void A3::renderSceneGraph(SceneNode & root, glm::mat4 parentM) {
             JointNode* jointNode = (static_cast<JointNode *>(&root));
             if(m_jointNodes.count(jointNode)<=0){
                 m_jointNodes.insert(jointNode);
-                cout << "insert " <<  jointNode->m_name << endl;
+                //cout << "insert " <<  jointNode->m_name << endl;
             }
             if(m_pickedIDs.count(geometryNode->m_nodeId)>0){
                 float angle_x = jointAngle + jointNode->get_xAngle();
@@ -735,7 +735,7 @@ void A3::handleKMEvents() {
     if (mouseFlags[m_left]){
         // translate on x and y axis
         if(keyFlags[key_P]){
-            cout << delta_x << " " << delta_y << endl;
+            //cout << delta_x << " " << delta_y << endl;
             w_translate = translate(w_translate, glm::vec3(delta_xp, -delta_yp, 0.0f));
         }
 
@@ -796,30 +796,30 @@ bool A3::mouseButtonInputEvent (
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_left] = false;
-                            cout << "left mouse released" << endl;
+                            //cout << "left mouse released" << endl;
                             j_clicked = false;
                     }
                 }
                 if (button == GLFW_MOUSE_BUTTON_RIGHT){
                     if (actions == GLFW_PRESS) {
                             mouseFlags[m_right] = true;
-                            cout << "right mouse pressed" << endl;
+                            //cout << "right mouse pressed" << endl;
                     }
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_right] = false;
-                            cout << "right mouse released" << endl;
+                            //cout << "right mouse released" << endl;
                     }
                 }
                 if (button == GLFW_MOUSE_BUTTON_MIDDLE){
                     if (actions == GLFW_PRESS) {
                             mouseFlags[m_middle] = true;
-                            cout << "middle mouse pressed" << endl;
+                            //cout << "middle mouse pressed" << endl;
                     }
 
                     if (actions == GLFW_RELEASE) {
                             mouseFlags[m_middle] = false;
-                            cout << "middle mouse released" << endl;
+                            //cout << "middle mouse released" << endl;
                     }
                 }
 	}
@@ -868,18 +868,15 @@ bool A3::keyInputEvent (
 
 	if( action == GLFW_PRESS ) {
 		if( key == GLFW_KEY_M ) {
-            cout << "M key pressed" << endl;
 			show_gui = !show_gui;
 			eventHandled = true;
         }
         if (key == GLFW_KEY_Q) {
-            cout << "Q key pressed" << endl;
             // quit
             glfwSetWindowShouldClose(m_window, GL_TRUE);
             eventHandled = true;
         }
         if (key == GLFW_KEY_P) {
-            cout << "P key pressed" << endl;
             // Position/Orientation
             keyFlags[key_P] = true;
             eventHandled = true;
@@ -929,7 +926,6 @@ bool A3::keyInputEvent (
 	// Fill in with event handling code...
     if ( action == GLFW_RELEASE ) {
         if (key == GLFW_KEY_P) {
-            cout << "P key released" << endl;
             keyFlags[key_P] = false;
             eventHandled = true;
         }
@@ -984,6 +980,5 @@ void A3::resetJoint(){
     for(auto it = m_jointNodes.begin(); it != m_jointNodes.end(); it++){
         (*it)->set_xAngle((*it)->m_joint_x.init);
         (*it)->set_yAngle((*it)->m_joint_y.init);
-        cout << "reset " <<  (*it)->m_name << endl;
     }
 }

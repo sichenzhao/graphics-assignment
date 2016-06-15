@@ -34,11 +34,9 @@ void JointNode::set_xAngle(float xAngle){
     joint_xAngle =  xAngle;
     if(joint_xAngle > m_joint_x.max){
         joint_xAngle = m_joint_x.max;
-        cout << "over" << endl;
     }
     if(joint_xAngle < m_joint_x.min){
         joint_xAngle = m_joint_x.min;
-        cout << "over" << endl;
     }
 }
 
@@ -46,11 +44,9 @@ void JointNode::set_yAngle(float yAngle){
     joint_yAngle =  yAngle;
     if(joint_yAngle > m_joint_y.max){
         joint_yAngle = m_joint_y.max;
-        cout << "over" << endl;
     }
     if(joint_yAngle < m_joint_y.min){
         joint_yAngle = m_joint_y.min;
-        cout << "over" << endl;
     }
 }
 
