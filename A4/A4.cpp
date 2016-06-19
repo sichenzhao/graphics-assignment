@@ -20,9 +20,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
         // hit
         
         // ambient light
-        col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
-        col.g = mat->m_shininess + mat->m_kd.g*(ambient.g);
-        col.b = mat->m_shininess + mat->m_kd.b*(ambient.b);
+        //col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
+        //col.g = mat->m_shininess + mat->m_kd.g*(ambient.g);
+        //col.b = mat->m_shininess + mat->m_kd.b*(ambient.b);
         
         //diffuse
         if (mat->m_kd != glm::vec3(0.0f)) {
@@ -36,12 +36,12 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
                 isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt);
             }
             
-            if(isShadow){
+            //if(isShadow){
                 // shadow, no direct light
-            }else {
+            //}else {
                 // direct light
                 col = directLight(mat->m_kd, hitPoint, light.position, light.colour);
-            }
+            //}
         }
         
         // specular
@@ -159,7 +159,8 @@ void A4_Render(
     for (uint y = 0; y<h; ++y) {
         for (uint x = 0; x < w; ++x) {
             // Assume one pixel is width 1 unit, height 1 unit
-            glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y - h/2 + y, eye.z - d);
+            // Assume eye 800, lookAt -800, x, y 都一样, d > 0
+            glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
             //glm::vec4 primaryRay = glm::vec4(pointOnImage - eye, 0.0f);
             
             for (auto it = lights.begin(); it != lights.end(); it++) {
@@ -170,7 +171,6 @@ void A4_Render(
                     image(x,y,0) = col.x;
                     image(x,y,1) = col.y;
                     image(x,y,2) = col.z;
-                    //printColor(x, y, col.x, col.y, col.b);
                 }
             }
             
