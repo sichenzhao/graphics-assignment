@@ -2,44 +2,56 @@
 
 #include <glm/glm.hpp>
 
+enum class PrimType {
+    Primitive,
+    Sphere,
+    Cube,
+    NonhierSphere,
+    NonhierBox
+};
+
 class Primitive {
 public:
-  virtual ~Primitive();
+    PrimType m_type;
+    Primitive();
+    virtual ~Primitive();
 };
 
 class Sphere : public Primitive {
 public:
-  virtual ~Sphere();
+    Sphere();
+    virtual ~Sphere();
 };
 
 class Cube : public Primitive {
 public:
-  virtual ~Cube();
+    Cube();
+    virtual ~Cube();
 };
 
 class NonhierSphere : public Primitive {
 public:
-  NonhierSphere(const glm::vec3& pos, double radius)
+    NonhierSphere(const glm::vec3& pos, double radius)
     : m_pos(pos), m_radius(radius)
-  {
-  }
-  virtual ~NonhierSphere();
-
-private:
-  glm::vec3 m_pos;
-  double m_radius;
+    {
+        m_type = PrimType::NonhierSphere;
+    }
+    virtual ~NonhierSphere();
+    
+    glm::vec3 m_pos;
+    double m_radius;
 };
 
 class NonhierBox : public Primitive {
 public:
-  NonhierBox(const glm::vec3& pos, double size)
+    NonhierBox(const glm::vec3& pos, double size)
     : m_pos(pos), m_size(size)
-  {
-  }
-  
-  virtual ~NonhierBox();
-
-private:
-  glm::vec3 m_pos;
-  double m_size;
+    {
+        m_type = PrimType::NonhierBox;
+    }
+    
+    virtual ~NonhierBox();
+    
+    glm::vec3 m_pos;
+    double m_size;
 };
