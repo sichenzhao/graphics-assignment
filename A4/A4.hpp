@@ -34,4 +34,4 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 lp, glm::vec3
 
 void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList);
 
-bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial** mat, double &t);
+bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial** mat, double &t, double min = 1, double max = std::numeric_limits<double>::infinity());

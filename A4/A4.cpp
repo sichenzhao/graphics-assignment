@@ -5,6 +5,7 @@
 #include "GeometryNode.hpp"
 
 double inf = std::numeric_limits<double>::infinity();
+static float eps = FLT_EPSILON;
 
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0f);
@@ -20,9 +21,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
         // hit
         
         // ambient light
-        //col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
-        //col.g = mat->m_shininess + mat->m_kd.g*(ambient.g);
-        //col.b = mat->m_shininess + mat->m_kd.b*(ambient.b);
+        col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
+        col.g = mat->m_shininess + mat->m_kd.g*(ambient.g);
+        col.b = mat->m_shininess + mat->m_kd.b*(ambient.b);
         
         //diffuse
         if (mat->m_kd != glm::vec3(0.0f)) {
@@ -33,15 +34,17 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
             for(auto it = nodes.begin(); it != nodes.end(); it++) {
                 PhongMaterial* tmp = NULL;
                 double tmpt = inf;
-                isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt);
+                isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
             }
             
+            // TODO: shadow is not working for now (everything is shadowed)
             //if(isShadow){
-                // shadow, no direct light
+                // shadow, no direct
+                // std::cout << "shadow" << i << std::endl;
             //}else {
                 // direct light
                 col = directLight(mat->m_kd, hitPoint, light.position, light.colour);
-            //}
+            //make}
         }
         
         // specular
@@ -56,7 +59,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
 // TODO: hit functions for all primaries
 // updated t and material if got intersection with less but greater than one t
 // TODO: what if the pixel is inside some primitives? -- should be black?
-bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t){
+bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, double min, double max){
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
     double lt;
@@ -70,11 +73,11 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         
         float determ = pow(B, 2) - 4*A*C;
         
-        if(determ < 0){
+        if(determ < 0 - eps){
             // no root
         } else {
             retBool = true;
-            if(determ ==0){
+            if(determ < 0 + eps){
                 // one root
                 lt = -B/(2*A);
             } else {
@@ -82,7 +85,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 lt = -B - sqrt(determ);
                 lt = lt / (2*A);
             }
-            if(lt >= 1){
+            if(lt >= min + eps && lt < max - eps){
                 t = std::min(t, lt);
                 if(t==lt){
                     // closest one
@@ -98,11 +101,11 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
 // direct light function for diffused object
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 lp, glm::vec3 lc) {
     glm::vec3 col = glm::vec3(0.0f);
-    // ignore fall off for now
     // TODO: consider light falloff based on distance
+    //double r = glm::dot(lp - hitPoint, lp - hitPoint);
     col.r = lc.r * mkd.r;
     col.g = lc.g * mkd.g;
-    col.b = lc.g * mkd.b;
+    col.b = lc.b * mkd.b;
     return col;
 }
 
@@ -110,7 +113,7 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
     if (root->m_nodeType==NodeType::GeometryNode) {
         // add it
         nodesList.insert(static_cast<GeometryNode*>(root));
-        std::cout << "added" << std::endl;
+        //std::cout << "added" << std::endl;
     }
     
     for (SceneNode* node : root->children) {
@@ -160,6 +163,7 @@ void A4_Render(
         for (uint x = 0; x < w; ++x) {
             // Assume one pixel is width 1 unit, height 1 unit
             // Assume eye 800, lookAt -800, x, y 都一样, d > 0
+            // TODO: maybe need to do superimpose to get more general mapping to WCS
             glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
             //glm::vec4 primaryRay = glm::vec4(pointOnImage - eye, 0.0f);
             
