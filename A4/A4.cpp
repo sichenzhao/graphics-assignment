@@ -3,6 +3,7 @@
 #include "A4.hpp"
 
 #include "GeometryNode.hpp"
+#include "Mesh.hpp"
 
 #define DEBUG_Z
 #ifdef DEBUG_Z
@@ -13,9 +14,9 @@ void dout(std::string msg){
 void dout(std::string msg){}
 #endif
 
-float inff = std::numeric_limits<float>::infinity();
-double infd = std::numeric_limits<double>::infinity();
-static float eps = FLT_EPSILON;
+static const float inff = std::numeric_limits<float>::infinity();
+static const double infd = std::numeric_limits<double>::infinity();
+static const float eps = FLT_EPSILON;
 
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0f);
@@ -66,7 +67,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
                 }
             }
             
-            // shadow of others
+            // TODO: shadow of others
             /**
             for(auto it = nodes.begin(); it != nodes.end(); it++) {
                 if(isShadow) break;
@@ -153,6 +154,50 @@ bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, do
     return false;
 }
 
+bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max){
+    //dout(glm::to_string(v1));
+    lt = infd;
+    bool retBool = false;
+    
+    glm::vec3 e1, e2; // Edge1, Edge2
+    glm::vec3 P, Q, T;
+    double det, inv_det, u, v;
+    double t;
+    
+    e1 = v2 - v1;
+    e2 = v3 - v1;
+    
+    // see if dir parallel to plane of triangle
+    P = glm::cross(dir, e2);
+    det = glm::dot(e1, P);
+    if(det > -eps && det < eps) return false;
+    inv_det = 1 / det;
+    
+    
+    T = eye - v1;
+    
+    u = glm::dot(T, P) * inv_det;
+    if(u < 0 || u > 1) return false;
+
+    Q = glm::cross(T, e1);
+    
+    v = glm::dot(e2, Q) * inv_det;
+    
+    if(v<0 || u+v > 1) return false;
+    
+    t = glm::dot(e2, Q)*inv_det;
+    std::cout << t << std::endl;
+    
+    if((t > min) && (t < max)){
+        lt = t;
+        dout("triangle hit");
+        return true;
+    }
+    
+    
+    return retBool;
+}
+
 // TODO: hit functions for all primaries
 // updated t and material if got intersection with less but greater than one t
 // TODO: what if the pixel is inside some primitives? -- should be black?
@@ -160,6 +205,8 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
     double lt = infd;
+    
+    // TODO: superimpose model to world, to transform ray and eye into MCS
     
     // primitiveType is NonhierSphere
     if (primitiveType == PrimType::NonhierSphere) {
@@ -185,8 +232,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 lt = lt / (2*A);
             }
             if(lt >= min + eps && lt < max - eps){
-                t = std::min(t, lt);
-                if(t==lt){
+                if(lt < t){
                     // closest one
                     *mat = static_cast<PhongMaterial*>(node.m_material);
                 }
@@ -195,12 +241,9 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         retBool = retBool || nhsBool;
     }
     
-    lt = infd;
-    
     // primitiveType is NonhierBox
     if (primitiveType == PrimType::NonhierBox) {
         bool nhbBool = false;
-        
         NonhierBox * primPtr = static_cast<NonhierBox*>(node.m_primitive);
         
         // Assumes no transformation
@@ -215,9 +258,40 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         
         retBool = retBool || nhbBool;
         if(nhbBool){
-            t = std::min(t, lt);
-            if(t==lt && t!=infd){
+            if(lt < t){
                 // closest one
+                *mat = static_cast<PhongMaterial*>(node.m_material);
+            }
+        }
+    }
+    
+    // primitiveType is Mesh
+    if (primitiveType == PrimType::Mesh) {
+        bool mBool = false;
+        double tMesh = infd;
+        Mesh * primPtr = static_cast<Mesh*>(node.m_primitive);
+        
+        glm::vec3 dir = pixel - eye;
+        
+        //std::cout << primPtr->m_faces.size() << std::endl;
+        
+        for(auto it = primPtr->m_faces.begin(); it != primPtr->m_faces.end(); it++){
+            // TODO: after considering scaling, no need to multiply by 100
+            glm::vec3 v1, v2, v3;
+            v1 = primPtr->m_vertices[(*it).v1] * 100;
+            v2 = primPtr->m_vertices[(*it).v2] * 100;
+            v3 = primPtr->m_vertices[(*it).v3] * 100;
+            if(hitTriangle(v1, v2, v3, eye, dir, lt, min, max)){
+                mBool = true;
+                if(lt < tMesh){
+                    tMesh = lt;
+                }
+            }
+        }
+        
+        retBool = retBool || mBool;
+        if(mBool){
+            if(tMesh < t){
                 *mat = static_cast<PhongMaterial*>(node.m_material);
             }
         }
@@ -291,6 +365,9 @@ void A4_Render(
     
     for (uint y = 0; y<h; ++y) {
         for (uint x = 0; x < w; ++x) {
+            
+            //std::cout << (y*w + x)*100/(h*w) << "%" << std::endl;
+            
             // Assume one pixel is width 1 unit, height 1 unit
             // Assume eye 800, lookAt -800, x, y 都一样, d > 0
             // TODO: maybe need to do superimpose to get more general mapping to WCS

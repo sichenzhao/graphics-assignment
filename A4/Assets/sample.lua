@@ -6,27 +6,7 @@ mat3 = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25)
 
 scene_root = gr.node('root')
 
-s1 = gr.nh_box('s1', {0, 0, -400}, 100)
-scene_root:add_child(s1)
-s1:set_material(mat1)
-
-s2 = gr.nh_box('s2', {200, 50, -100}, 150)
-scene_root:add_child(s2)
-s2:set_material(mat1)
-
-s3 = gr.nh_box('s3', {0, -1200, -500}, 1000)
-scene_root:add_child(s3)
-s3:set_material(mat2)
-
-s4 = gr.nh_box('s4', {-100, 25, -300}, 50)
-scene_root:add_child(s4)
-s4:set_material(mat3)
-
-s5 = gr.nh_box('s5', {0, 100, -250}, 25)
-scene_root:add_child(s5)
-s5:set_material(mat1)
-
-s6 = gr.nh_box('s6', {-100, -100, -250}, 25)
+s6 = gr.mesh('cube', 'Assets/cube.obj');
 scene_root:add_child(s6)
 s6:set_material(mat1)
 
