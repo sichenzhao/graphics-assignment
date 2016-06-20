@@ -21,8 +21,11 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
     glm::vec3 col = glm::vec3(0.0f);
     double t = infd;
     PhongMaterial* mat = NULL;
+    GeometryNode* hitNode = NULL;
     for (auto it = nodes.begin(); it != nodes.end(); it++) {
-        hit(eye, pixelPoint, **it, &mat, t);
+        if(hit(eye, pixelPoint, **it, &mat, t)){
+            hitNode = *it;
+        }
     }
     if(infd==t || NULL==mat){
         // return background
@@ -41,20 +44,32 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
             
             // determine shadow
             bool isShadow = false;
+            
+            // shadow for itself
+            if(hitNode->m_primitive->m_type == PrimType::NonhierSphere){
+                NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
+                isShadow = (glm::dot(hitPoint - primPtr->m_pos, light.position - hitPoint) < 0);
+            }
+            
+            // shadow of others
+            /**
             for(auto it = nodes.begin(); it != nodes.end(); it++) {
+                if(isShadow) break;
+                if(*it==hitNode) continue;
                 PhongMaterial* tmp = NULL;
                 double tmpt = infd;
                 isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
             }
+             **/
             
             // TODO: shadow is not working for now (everything is shadowed)
-            //if(isShadow){
+            if(isShadow){
                 // shadow, no direct
                 // std::dout << "shadow" << i << std::endl;
-            //}else {
+            }else {
                 // direct light
                 col = directLight(mat->m_kd, hitPoint, light.position, light.colour);
-            //make}
+            }
         }
         
         // specular
