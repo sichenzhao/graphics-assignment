@@ -1,4 +1,5 @@
 #include <glm/ext.hpp>
+#include <algorithm>
 
 #include "A4.hpp"
 
@@ -18,13 +19,14 @@ static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
 static const float eps = FLT_EPSILON;
 
-glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
+glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0f);
+    glm::vec3 hitNormal = glm::vec3(0.0f);
     double t = infd;
     PhongMaterial* mat = NULL;
     GeometryNode* hitNode = NULL;
     for (auto it = nodes.begin(); it != nodes.end(); it++) {
-        if(hit(eye, pixelPoint, **it, &mat, t)){
+        if(hit(eye, pixelPoint, **it, &mat, t, hitNormal)){
             hitNode = *it;
         }
     }
@@ -35,9 +37,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
         // hit
         
         // ambient light
-        col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
-        col.g = mat->m_shininess + mat->m_kd.g*(ambient.g);
-        col.b = mat->m_shininess + mat->m_kd.b*(ambient.b);
+        col.r = mat->m_kd.r*(ambient.r)/lightNum;
+        col.g = mat->m_kd.g*(ambient.g)/lightNum;
+        col.b = mat->m_kd.b*(ambient.b)/lightNum;
         
         //diffuse
         if (mat->m_kd != glm::vec3(0.0f)) {
@@ -84,7 +86,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
                 // std::dout << "shadow" << i << std::endl;
             }else {
                 // direct light
-                col = directLight(mat->m_kd, hitPoint, light.position, light.colour);
+                col = directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
             }
         }
         
@@ -155,7 +157,7 @@ bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, do
 }
 
 bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max){
-    //dout(glm::to_string(v1));
+    // Möller-Trumbore algorithm
     lt = infd;
     bool retBool = false;
     
@@ -196,7 +198,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
 // TODO: hit functions for all primaries
 // updated t and material if got intersection with less but greater than one t
 // TODO: what if the pixel is inside some primitives? -- should be black?
-bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, double min, double max){
+bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, glm::vec3 &hitNormal, double min, double max){
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
     double lt = infd;
@@ -230,6 +232,8 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 if(lt < t){
                     // closest one
                     *mat = static_cast<PhongMaterial*>(node.m_material);
+                    t = lt;
+                    hitNormal = (eye + (pixel - eye)*t - primPtr->m_pos);
                 }
             }
         }
@@ -298,13 +302,24 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
 }
 
 // direct light function for diffused object
-glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 lp, glm::vec3 lc) {
+glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc) {
     glm::vec3 col = glm::vec3(0.0f);
     // TODO: consider light falloff based on distance
     //double r = glm::dot(lp - hitPoint, lp - hitPoint);
-    col.r = lc.r * mkd.r;
-    col.g = lc.g * mkd.g;
-    col.b = lc.b * mkd.b;
+    glm::vec3 L = glm::normalize((lp - hitPoint));
+    if (glm::dot(lp - hitPoint, hitNormal)) {
+        dout("neg dot");
+        dout(glm::to_string(hitPoint - hitNormal) + " is center");
+       // dout(glm::to_string(hitNormal) + " is hitNormal");
+       // dout(glm::to_string(lp - hitPoint) + " is L");
+        
+       // dout(glm::to_string(lp) + " is lp");
+    }
+
+    hitNormal = glm::normalize(hitNormal);
+    col.r += lc.r * mkd.r * glm::dot(L, hitNormal);
+    col.g += lc.g * mkd.g * glm::dot(L, hitNormal);
+    col.b += lc.b * mkd.b * glm::dot(L, hitNormal);
     return col;
 }
 
@@ -370,17 +385,21 @@ void A4_Render(
             glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
             //glm::vec4 primaryRay = glm::vec4(pointOnImage - eye, 0.0f);
             
+            int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {
-                if (image(x, y, 0)==0 && image(x,y,1)==0 && image(x,y,2)==0) {
-                    // TODO: merge multiple light sources effects
-                    // Right now, the first non-black wins
-                    glm::vec3 col = rayColor(eye, pointOnImage, **it, nodesList, ambient);
-                    image(x,y,0) = col.x;
-                    image(x,y,1) = col.y;
-                    image(x,y,2) = col.z;
-                }
+                // TODO: merge multiple light sources effects
+                // Right now, the first non-black wins
+                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, nodesList, ambient);
+                //printColor(x, y, col.x, col.y, col.z);
+                image(x,y,0) += col.x;
+                image(x,y,1) += col.y;
+                image(x,y,2) += col.z;
             }
-            
+            /**
+            image(x,y,0) = std::max(0.0, std::min(1.0, image(x,y,0)));
+            image(x,y,1) = std::max(0.0, std::min(1.0, image(x,y,1)));
+            image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
+             **/
         }
     }
     
