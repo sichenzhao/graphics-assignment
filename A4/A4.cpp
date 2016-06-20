@@ -32,6 +32,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
         return col;
     } else {
         // hit
+        dout("hit");
         
         // ambient light
         col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
@@ -81,16 +82,74 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
     return col;
 }
 
+
+bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max){
+    
+    // init
+    lt = infd;
+    
+    double tmin, tmax, tymin, tymax, tzmin, tzmax;
+    
+    if (dir.x >= 0) {
+        tmin = (b0.x - eye.x) / dir.x;
+        tmax = (b1.x - eye.x) / dir.x;
+    } else {
+        tmin = (b1.x - eye.x) / dir.x;
+        tmax = (b0.x - eye.x) / dir.x;
+    }
+    
+    if (dir.y >= 0) {
+        tymin = (b0.y - eye.y) / dir.y;
+        tymax = (b1.y - eye.y) / dir.y;
+    } else {
+        tymin = (b1.y - eye.y) / dir.y;
+        tymax = (b0.y - eye.y) / dir.y;
+    }
+    
+    if ( (tmin > tymax) || (tymin > tmax) )
+        return false;
+    
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+    
+    if (dir.z >= 0) {
+        tzmin = (b0.z - eye.z) / dir.z;
+        tzmax = (b1.z - eye.z) / dir.z;
+    } else {
+        tzmin = (b1.z - eye.z) / dir.z;
+        tzmax = (b0.z - eye.z) / dir.z;
+    }
+    
+    if ( (tmin > tzmax) || (tzmin > tmax) )
+        return false;
+    
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+    
+    if((tmin >= min + eps) && (tmax < max - eps)) {
+        assert(tmin <= tmax);
+        // hits nh_cube
+        lt = std::min(lt, tmin);
+        return true;
+    }
+    return false;
+}
+
 // TODO: hit functions for all primaries
 // updated t and material if got intersection with less but greater than one t
 // TODO: what if the pixel is inside some primitives? -- should be black?
 bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, double min, double max){
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
-    double lt;
+    double lt = infd;
     
     // primitiveType is NonhierSphere
     if (primitiveType == PrimType::NonhierSphere) {
+        bool nhsBool = false;
         NonhierSphere * primPtr = static_cast<NonhierSphere*>(node.m_primitive);
         float A = glm::dot(pixel - eye, pixel - eye);
         float B = glm::dot(eye - primPtr->m_pos, pixel - eye);
@@ -102,7 +161,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         if(determ < 0 - eps){
             // no root
         } else {
-            retBool = true;
+            nhsBool = true;
             if(determ < 0 + eps){
                 // one root
                 lt = -B/(2*A);
@@ -119,11 +178,14 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 }
             }
         }
+        retBool = retBool || nhsBool;
     }
+    
+    lt = infd;
     
     // primitiveType is NonhierBox
     if (primitiveType == PrimType::NonhierBox) {
-        dout("box");
+        bool nhbBool = false;
         
         NonhierBox * primPtr = static_cast<NonhierBox*>(node.m_primitive);
         
@@ -135,52 +197,18 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         glm::vec3 b1 = glm::vec3(b0.x + size, b0.y + size, b0.z + size);
         glm::vec3 dir = pixel - eye;
         
-        double tmin, tmax, tymin, tymax, tzmin, tzmax;
-        if (dir.x >= 0) {
-            tmin = (b0.x - eye.x) / dir.x;
-            tmax = (b1.x - eye.x) / dir.x;
-        } else {
-            tmin = (b1.x - eye.x) / dir.x;
-            tmax = (b0.x - eye.x) / dir.x;
-        }
-        if (dir.y >= 0) {
-            tymin = (b0.y - eye.y) / dir.y;
-            tymax = (b1.y - eye.y) / dir.y;
-        } else {
-            tymin = (b1.y - eye.y) / dir.y;
-            tymax = (b0.y - eye.y) / dir.y;
-        }
-        if ( (tmin > tymax) || (tymin > tmax) )
-            return false;
-        if (tymin > tmin)
-            tmin = tymin;
-        if (tymax < tmax)
-            tmax = tymax;
-        if (dir.z >= 0) {
-            tzmin = (b0.z - eye.z) / dir.z;
-            tzmax = (b1.z - eye.z) / dir.z;
-        } else {
-            tzmin = (b1.z - eye.z) / dir.z;
-            tzmax = (b0.z - eye.z) / dir.z;
-        }
-        if ( (tmin > tzmax) || (tzmin > tmax) )
-            return false;
-        if (tzmin > tmin)
-            tmin = tzmin;
-        if (tzmax < tmax)
-            tmax = tzmax;
-
-        if((lt >= min + eps) && (lt < max - eps)) {
-            // hits nh_cube
-            dout("hit cube");
-            t = std::min(t, tmin);
-            if(t==tmin){
+        nhbBool = hitBoundingBox(b0, b1, eye, dir, lt, min, max);
+        
+        retBool = retBool || nhbBool;
+        if(nhbBool){
+            t = std::min(t, lt);
+            if(t==lt && t!=infd){
                 // closest one
                 *mat = static_cast<PhongMaterial*>(node.m_material);
             }
         }
-        
     }
+    
     // ignores other kinds of primitives for now
     return retBool;
 }
@@ -200,7 +228,6 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
     if (root->m_nodeType==NodeType::GeometryNode) {
         // add it
         nodesList.insert(static_cast<GeometryNode*>(root));
-        //std::dout << "added" << std::endl;
     }
     
     for (SceneNode* node : root->children) {

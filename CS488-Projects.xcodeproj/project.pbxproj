@@ -462,6 +462,7 @@
 		0CFA619F1BA8C8E50041C6E5 /* Main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
 		0CFA61A01BA8C8E50041C6E5 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		0CFA61A11BA8C8E50041C6E5 /* premake4.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = premake4.lua; sourceTree = "<group>"; };
+		CDC9B6AF1D18343D00BF0324 /* sample.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = sample.lua; sourceTree = "<group>"; };
 		EF66900674193A7C9A818BE1 /* lcorolib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lcorolib.c; sourceTree = "<group>"; };
 		EF669008CE107BFB53DEAD20 /* lopcodes.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = lopcodes.o; sourceTree = "<group>"; };
 		EF66902FFAF6C0331E4A906B /* ldo.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = ldo.o; sourceTree = "<group>"; };
@@ -746,6 +747,7 @@
 				0C021AEB1BDEF0F900B28537 /* simple-cows.lua */,
 				0C021AEC1BDEF0F900B28537 /* simple.lua */,
 				0C021AED1BDEF0F900B28537 /* smstdodeca.lua */,
+				CDC9B6AF1D18343D00BF0324 /* sample.lua */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
