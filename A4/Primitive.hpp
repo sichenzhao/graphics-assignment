@@ -7,7 +7,8 @@ enum class PrimType {
     Sphere,
     Cube,
     NonhierSphere,
-    NonhierBox
+    NonhierBox,
+    Mesh
 };
 
 class Primitive {

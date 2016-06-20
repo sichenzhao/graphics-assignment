@@ -4,17 +4,27 @@
 
 #include "GeometryNode.hpp"
 
-double inf = std::numeric_limits<double>::infinity();
+#define DEBUG_Z
+#ifdef DEBUG_Z
+void dout(std::string msg){
+    std::cout << msg << std::endl;
+}
+#else
+void dout(std::string msg){}
+#endif
+
+float inff = std::numeric_limits<float>::infinity();
+double infd = std::numeric_limits<double>::infinity();
 static float eps = FLT_EPSILON;
 
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0f);
-    double t = inf;
+    double t = infd;
     PhongMaterial* mat = NULL;
     for (auto it = nodes.begin(); it != nodes.end(); it++) {
         hit(eye, pixelPoint, **it, &mat, t);
     }
-    if(inf==t || NULL==mat){
+    if(infd==t || NULL==mat){
         // return background
         return col;
     } else {
@@ -33,14 +43,14 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
             bool isShadow = false;
             for(auto it = nodes.begin(); it != nodes.end(); it++) {
                 PhongMaterial* tmp = NULL;
-                double tmpt = inf;
+                double tmpt = infd;
                 isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
             }
             
             // TODO: shadow is not working for now (everything is shadowed)
             //if(isShadow){
                 // shadow, no direct
-                // std::cout << "shadow" << i << std::endl;
+                // std::dout << "shadow" << i << std::endl;
             //}else {
                 // direct light
                 col = directLight(mat->m_kd, hitPoint, light.position, light.colour);
@@ -63,6 +73,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
     double lt;
+    
     // primitiveType is NonhierSphere
     if (primitiveType == PrimType::NonhierSphere) {
         NonhierSphere * primPtr = static_cast<NonhierSphere*>(node.m_primitive);
@@ -94,6 +105,67 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
             }
         }
     }
+    
+    // primitiveType is NonhierBox
+    if (primitiveType == PrimType::NonhierBox) {
+        dout("box");
+        
+        NonhierBox * primPtr = static_cast<NonhierBox*>(node.m_primitive);
+        
+        // Assumes no transformation
+        assert(node.get_transform() == glm::mat4(1.0f));
+        
+        glm::vec3 b0 = primPtr->m_pos;
+        double size = primPtr->m_size;
+        glm::vec3 b1 = glm::vec3(b0.x + size, b0.y + size, b0.z + size);
+        glm::vec3 dir = pixel - eye;
+        
+        double tmin, tmax, tymin, tymax, tzmin, tzmax;
+        if (dir.x >= 0) {
+            tmin = (b0.x - eye.x) / dir.x;
+            tmax = (b1.x - eye.x) / dir.x;
+        } else {
+            tmin = (b1.x - eye.x) / dir.x;
+            tmax = (b0.x - eye.x) / dir.x;
+        }
+        if (dir.y >= 0) {
+            tymin = (b0.y - eye.y) / dir.y;
+            tymax = (b1.y - eye.y) / dir.y;
+        } else {
+            tymin = (b1.y - eye.y) / dir.y;
+            tymax = (b0.y - eye.y) / dir.y;
+        }
+        if ( (tmin > tymax) || (tymin > tmax) )
+            return false;
+        if (tymin > tmin)
+            tmin = tymin;
+        if (tymax < tmax)
+            tmax = tymax;
+        if (dir.z >= 0) {
+            tzmin = (b0.z - eye.z) / dir.z;
+            tzmax = (b1.z - eye.z) / dir.z;
+        } else {
+            tzmin = (b1.z - eye.z) / dir.z;
+            tzmax = (b0.z - eye.z) / dir.z;
+        }
+        if ( (tmin > tzmax) || (tzmin > tmax) )
+            return false;
+        if (tzmin > tmin)
+            tmin = tzmin;
+        if (tzmax < tmax)
+            tmax = tzmax;
+
+        if((lt >= min + eps) && (lt < max - eps)) {
+            // hits nh_cube
+            dout("hit cube");
+            t = std::min(t, tmin);
+            if(t==tmin){
+                // closest one
+                *mat = static_cast<PhongMaterial*>(node.m_material);
+            }
+        }
+        
+    }
     // ignores other kinds of primitives for now
     return retBool;
 }
@@ -113,7 +185,7 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
     if (root->m_nodeType==NodeType::GeometryNode) {
         // add it
         nodesList.insert(static_cast<GeometryNode*>(root));
-        //std::cout << "added" << std::endl;
+        //std::dout << "added" << std::endl;
     }
     
     for (SceneNode* node : root->children) {
@@ -123,7 +195,9 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
 }
 
 void printColor(int x, int y, int r, int g, int b) {
+#ifdef DEBUG_Z
     std::cout << "(" << x << ", " << y << ") <-- (" << r << ", " << g << ", " << b << ")" << std::endl;
+#endif
 }
 
 void A4_Render(
@@ -155,7 +229,7 @@ void A4_Render(
     extractNodes(root, nodesList);
     /**
     for (auto it = nodesList.begin(); it != nodesList.end(); it++) {
-        std::cout << (*it)->m_name << std::endl;
+        std::dout << (*it)->m_name << std::endl;
     }
      **/
     
@@ -196,7 +270,7 @@ void A4_Render(
         std::cout << "\t\t" <<  *light << std::endl;
     }
     std::cout << "\t}" << std::endl;
-    std:: cout <<")" << std::endl;
+    std::cout <<")" << std::endl;
     /**
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
