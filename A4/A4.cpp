@@ -28,7 +28,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
             hitNode = *it;
         }
     }
-    if(infd==t || NULL==mat){
+    if(infd==t || NULL==mat || NULL==hitNode){
         // return background
         return col;
     } else {
@@ -175,22 +175,17 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     
     T = eye - v1;
-    
     u = glm::dot(T, P) * inv_det;
     if(u < 0 || u > 1) return false;
 
     Q = glm::cross(T, e1);
-    
-    v = glm::dot(e2, Q) * inv_det;
-    
+    v = glm::dot(dir, Q) * inv_det;
     if(v<0 || u+v > 1) return false;
     
     t = glm::dot(e2, Q)*inv_det;
-    std::cout << t << std::endl;
     
     if((t > min) && (t < max)){
         lt = t;
-        dout("triangle hit");
         return true;
     }
     
@@ -292,6 +287,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         retBool = retBool || mBool;
         if(mBool){
             if(tMesh < t){
+                t = tMesh;
                 *mat = static_cast<PhongMaterial*>(node.m_material);
             }
         }
