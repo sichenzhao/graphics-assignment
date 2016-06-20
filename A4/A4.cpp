@@ -32,7 +32,6 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
         return col;
     } else {
         // hit
-        dout("hit");
         
         // ambient light
         col.r = mat->m_shininess + mat->m_kd.r*(ambient.r);
@@ -47,9 +46,24 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, std::set<Ge
             bool isShadow = false;
             
             // shadow for itself
-            if(hitNode->m_primitive->m_type == PrimType::NonhierSphere){
+            PrimType hitObjType = hitNode->m_primitive->m_type;
+            if (hitObjType == PrimType::NonhierSphere){
                 NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
                 isShadow = (glm::dot(hitPoint - primPtr->m_pos, light.position - hitPoint) < 0);
+            } else if(hitObjType == PrimType::NonhierBox){
+                NonhierBox * primPtr = static_cast<NonhierBox*>(hitNode->m_primitive);
+                glm::vec3 lp = light.position;
+                glm::vec3 cc = primPtr->m_pos;
+                double cs = primPtr->m_size;
+                assert(cs>0);
+                if(((hitPoint.x == cc.x) && (lp.x>cc.x))
+                   ||((hitPoint.x == cc.x+cs) && (lp.x<cc.x+cs))
+                   ||((hitPoint.y == cc.y) && (lp.y>cc.y))
+                   ||((hitPoint.y == cc.y+cs) && (lp.y<cc.y+cs))
+                   ||((hitPoint.z == cc.z) && (lp.z>cc.z))
+                   ||((hitPoint.z == cc.z+cs) && (lp.z<cc.z+cs))){
+                    isShadow = true;
+                }
             }
             
             // shadow of others
