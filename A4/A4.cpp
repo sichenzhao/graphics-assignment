@@ -47,6 +47,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         bool isShadow = false;
         
         // shadow for itself
+        /**
         PrimType hitObjType = hitNode->m_primitive->m_type;
         if (hitObjType == PrimType::NonhierSphere){
             NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
@@ -66,26 +67,26 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
                 isShadow = true;
             }
         }
-        
-        // TODO: shadow of others
-        /**
-         for(auto it = nodes.begin(); it != nodes.end(); it++) {
-         if(isShadow) break;
-         if(*it==hitNode) continue;
-         PhongMaterial* tmp = NULL;
-         double tmpt = infd;
-         isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
-         }
          **/
         
+        // TODO: shadow of others
+        for(auto it = nodes.begin(); it != nodes.end(); it++) {
+            if(isShadow) break;
+            if(*it==hitNode) continue;
+            PhongMaterial* tmp = NULL;
+            double tmpt = infd;
+            glm::vec3 tmpNormal = glm::vec3(0.0f);
+            isShadow = isShadow || (hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1) && tmpt < 1+eps && tmpt > 0-eps);
+        }
+        
         //diffuse
-        if (mat->m_kd != glm::vec3(0.0f)) {
+        if (mat->m_kd != glm::vec3(0.0f) && !isShadow) {
             // direct light
             col += directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
         }
         
         // specular
-        if (mat->m_ks != glm::vec3(0.0f)) {
+        if (mat->m_ks != glm::vec3(0.0f) && !isShadow) {
             // TODO: do specular recursively, no need for simple image now
             col += indirectLight(mat->m_ks, hitPoint, hitNormal, light.position, light.colour, eye, mat->m_shininess);
             return col;
@@ -287,9 +288,9 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         for(auto it = primPtr->m_faces.begin(); it != primPtr->m_faces.end(); it++){
             // TODO: after considering scaling, no need to multiply by 100
             glm::vec3 v1, v2, v3, n;
-            v1 = primPtr->m_vertices[(*it).v1] * 100;
-            v2 = primPtr->m_vertices[(*it).v2] * 100;
-            v3 = primPtr->m_vertices[(*it).v3] * 100;
+            v1 = primPtr->m_vertices[(*it).v1];
+            v2 = primPtr->m_vertices[(*it).v2];
+            v3 = primPtr->m_vertices[(*it).v3];
             if(hitTriangle(v1, v2, v3, eye, dir, lt, min, max, n)){
                 mBool = true;
                 if(lt < tMesh){
@@ -321,9 +322,7 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, gl
     glm::vec3 L = glm::normalize((lp - hitPoint));
 
     hitNormal = glm::normalize(hitNormal);
-    col.r += lc.r * mkd.r * glm::dot(L, hitNormal);
-    col.g += lc.g * mkd.g * glm::dot(L, hitNormal);
-    col.b += lc.b * mkd.b * glm::dot(L, hitNormal);
+    col = mkd * std::max(glm::dot(L, hitNormal), 0.0f) * lc;
     return col;
 }
 
@@ -333,9 +332,7 @@ glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, 
     glm::vec3 V = glm::normalize(eye - hitPoint);
     glm::vec3 R = glm::normalize(glm::reflect(- lp + hitPoint, hitNormal));
     
-    col.r += lc.r * mks.r * pow(glm::dot(V,R), shininess);
-    col.g += lc.g * mks.g * pow(glm::dot(V,R), shininess);
-    col.b += lc.b * mks.b * pow(glm::dot(V,R), shininess);
+    col = mks * pow(std::max(glm::dot(V, R), 0.0f), shininess) * lc;
     return col;
 }
 
