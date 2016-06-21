@@ -6,7 +6,7 @@ mat3 = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25)
 
 scene_root = gr.node('root')
 
-s1 = gr.mesh('dodec', 'Assets/smstdodeca.obj')
+s1 = gr.mesh('dodec', 'smstdodeca.obj')
 scene_root:add_child(s1)
 s1:set_material(mat3)
 

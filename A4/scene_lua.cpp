@@ -253,8 +253,12 @@ int gr_mesh_cmd(lua_State* L)
 
 	const char* name = luaL_checkstring(L, 1);
 	const char* obj_fname = luaL_checkstring(L, 2);
+    
+    std::string obj_file_prefix = "Assets/";
 
-	std::string sfname( obj_fname );
+    //std::string sfname( obj_file_prefix + obj_fname );
+    std::string sfname( obj_fname );
+    
 
 	// Use a dictionary structure to make sure every mesh is loaded
 	// at most once.
@@ -262,7 +266,7 @@ int gr_mesh_cmd(lua_State* L)
 	Mesh *mesh = nullptr;
 
 	if( i == mesh_map.end() ) {
-		mesh = new Mesh( obj_fname );
+		mesh = new Mesh( obj_file_prefix + obj_fname );
 	} else {
 		mesh = i->second;
 	}

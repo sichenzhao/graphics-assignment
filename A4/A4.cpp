@@ -186,14 +186,26 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     PrimType primitiveType = node.m_primitive->m_type;
     double lt = infd;
     
+    // primary ray
+    glm::vec3 dir = pixel - eye;
+    
     // TODO: superimpose model to world, to transform ray and eye into MCS
+    glm::mat4 w2m = node.get_transform();
+    if(node.get_transform() != glm::mat4(1.0f)){
+        glm::mat4 w2m_inv = glm::inverse(w2m);
+        
+        eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0f));
+        pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0f));
+        
+        dir = pixel - eye;
+    }
     
     // primitiveType is NonhierSphere
     if (primitiveType == PrimType::NonhierSphere) {
         bool nhsBool = false;
         NonhierSphere * primPtr = static_cast<NonhierSphere*>(node.m_primitive);
-        float A = glm::dot(pixel - eye, pixel - eye);
-        float B = glm::dot(eye - primPtr->m_pos, pixel - eye);
+        float A = glm::dot(dir, dir);
+        float B = glm::dot(eye - primPtr->m_pos, dir);
         B = 2*B;
         float C = dot(eye - primPtr->m_pos, eye - primPtr->m_pos) - pow(primPtr->m_radius, 2);
         
@@ -216,7 +228,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                     // closest one
                     *mat = static_cast<PhongMaterial*>(node.m_material);
                     t = lt;
-                    hitNormal = (eye + (pixel - eye)*t - primPtr->m_pos);
+                    hitNormal = (eye + (dir)*t - primPtr->m_pos);
                 }
             }
         }
@@ -234,7 +246,6 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         glm::vec3 b0 = primPtr->m_pos;
         double size = primPtr->m_size;
         glm::vec3 b1 = glm::vec3(b0.x + size, b0.y + size, b0.z + size);
-        glm::vec3 dir = pixel - eye;
         
         glm::vec3 box_normal;
         nhbBool = hitBoundingBox(b0, b1, eye, dir, lt, min, max, box_normal);
@@ -256,8 +267,6 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         double tMesh = infd;
         glm::vec3 normalTriangle;
         Mesh * primPtr = static_cast<Mesh*>(node.m_primitive);
-        
-        glm::vec3 dir = pixel - eye;
         
         //std::cout << primPtr->m_faces.size() << std::endl;
         
@@ -284,6 +293,12 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 hitNormal = normalTriangle;
             }
         }
+    }
+    
+    hitNormal = glm::vec3(w2m*glm::vec4(hitNormal, 0.0f));
+    
+    if (retBool) {
+        //dout("hit");
     }
     
     // ignores other kinds of primitives for now
@@ -319,6 +334,8 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
     }
     
     for (SceneNode* node : root->children) {
+        // set trans for hierarchical
+        //node->set_transform(node->get_transform() * root->get_transform());
         extractNodes(node, nodesList);
     }
     return;
@@ -367,10 +384,10 @@ void A4_Render(
         
         for (uint x = 0; x < w; ++x) {
             // clear screen
-            std::cout << "\033[2J";
+            //std::cout << "\033[2J";
             
             // print percentage on (1,1)
-            std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
+            //std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
             
             // Assume one pixel is width 1 unit, height 1 unit
             // Assume eye 800, lookAt -800, x, y 都一样, d > 0
@@ -394,6 +411,7 @@ void A4_Render(
         }
     }
     
+    std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
     std::cout << "Calling A4_Render(\n" <<
 		  "\t" << *root <<
     "\t" << "Image(width:" << image.width() << ", height:" << image.height() << ")\n"
@@ -426,4 +444,7 @@ void A4_Render(
             //}
         }
     }
+    
+    //glm::vec4 test4 = glm::vec4(1,2,3,4);
+    //dout(glm::to_string(glm::vec3(test4)));
 }
