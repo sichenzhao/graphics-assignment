@@ -46,29 +46,6 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         // determine shadow
         bool isShadow = false;
         
-        // shadow for itself
-        /**
-        PrimType hitObjType = hitNode->m_primitive->m_type;
-        if (hitObjType == PrimType::NonhierSphere){
-            NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
-            isShadow = (glm::dot(hitPoint - primPtr->m_pos, light.position - hitPoint) < 0);
-        } else if(hitObjType == PrimType::NonhierBox){
-            NonhierBox * primPtr = static_cast<NonhierBox*>(hitNode->m_primitive);
-            glm::vec3 lp = light.position;
-            glm::vec3 cc = primPtr->m_pos;
-            double cs = primPtr->m_size;
-            assert(cs>0);
-            if(((hitPoint.x == cc.x) && (lp.x>cc.x))
-               ||((hitPoint.x == cc.x+cs) && (lp.x<cc.x+cs))
-               ||((hitPoint.y == cc.y) && (lp.y>cc.y))
-               ||((hitPoint.y == cc.y+cs) && (lp.y<cc.y+cs))
-               ||((hitPoint.z == cc.z) && (lp.z>cc.z))
-               ||((hitPoint.z == cc.z+cs) && (lp.z<cc.z+cs))){
-                isShadow = true;
-            }
-        }
-         **/
-        
         // TODO: shadow of others
         for(auto it = nodes.begin(); it != nodes.end(); it++) {
             if(isShadow) break;
@@ -79,14 +56,13 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             isShadow = isShadow || (hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1) && tmpt < 1+eps && tmpt > 0-eps);
         }
         
-        //diffuse
-        if (mat->m_kd != glm::vec3(0.0f) && !isShadow) {
+        
+        if (!isShadow) {
+            // diffuse
             // direct light
             col += directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
-        }
-        
-        // specular
-        if (mat->m_ks != glm::vec3(0.0f) && !isShadow) {
+            
+            // specular
             // TODO: do specular recursively, no need for simple image now
             col += indirectLight(mat->m_ks, hitPoint, hitNormal, light.position, light.colour, eye, mat->m_shininess);
             return col;
@@ -182,7 +158,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     T = eye - v1;
     u = glm::dot(T, P) * inv_det;
     if(u < 0 || u > 1) return false;
-
+    
     Q = glm::cross(T, e1);
     v = glm::dot(dir, Q) * inv_det;
     if(v<0 || u+v > 1) return false;
@@ -320,7 +296,7 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, gl
     // TODO: consider light falloff based on distance
     //double r = glm::dot(lp - hitPoint, lp - hitPoint);
     glm::vec3 L = glm::normalize((lp - hitPoint));
-
+    
     hitNormal = glm::normalize(hitNormal);
     col = mkd * std::max(glm::dot(L, hitNormal), 0.0f) * lc;
     return col;
@@ -382,9 +358,9 @@ void A4_Render(
     std::set<GeometryNode*> nodesList;
     extractNodes(root, nodesList);
     /**
-    for (auto it = nodesList.begin(); it != nodesList.end(); it++) {
-        std::dout << (*it)->m_name << std::endl;
-    }
+     for (auto it = nodesList.begin(); it != nodesList.end(); it++) {
+     std::dout << (*it)->m_name << std::endl;
+     }
      **/
     
     for (uint y = 0; y<h; ++y) {
@@ -430,19 +406,20 @@ void A4_Render(
     }
     std::cout << "\t}" << std::endl;
     std::cout <<")" << std::endl;
-    /**
+    
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
-            if (image(x, y, 0)==0 && image(x,y,1)==0 && image(x,y,2)==0) {
-                // Red: increasing from top to bottom
-                image(x, y, 0) = (double)y / h;
-                // Green: increasing from left to right
-                image(x, y, 1) = (double)x / w;
-                // Blue: in lower-left and upper-right corners
-                image(x, y, 2) = ((y < h/2 && x < w/2)
-                                  || (y >= h/2 && x >= w/2)) ? 1.0 : 0.0;
+            if((x+y)%(51)==0 && (y-x)%(17)==0){
+                if (image(x, y, 0)==0 && image(x,y,1)==0 && image(x,y,2)==0) {
+                    // Red: increasing from top to bottom
+                    image(x, y, 0) = (double)y / h;
+                    // Green: increasing from left to right
+                    image(x, y, 1) = (double)x / w;
+                    // Blue: in lower-left and upper-right corners
+                    image(x, y, 2) = ((y < h/2 && x < w/2)
+                                      || (y >= h/2 && x >= w/2)) ? 1.0 : 0.0;
+                }
             }
         }
     }
-     **/
 }
