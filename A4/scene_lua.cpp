@@ -259,7 +259,6 @@ int gr_mesh_cmd(lua_State* L)
     //std::string sfname( obj_file_prefix + obj_fname );
     std::string sfname( obj_fname );
     
-
 	// Use a dictionary structure to make sure every mesh is loaded
 	// at most once.
 	auto i = mesh_map.find( sfname );

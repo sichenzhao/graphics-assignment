@@ -6,7 +6,9 @@
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
-#define DEBUG_Z
+#define RELEASE
+
+//m#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
     std::cout << msg << std::endl;
@@ -26,6 +28,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
     PhongMaterial* mat = NULL;
     GeometryNode* hitNode = NULL;
     for (auto it = nodes.begin(); it != nodes.end(); it++) {
+//        dout((**it).m_name);
         if(hit(eye, pixelPoint, **it, &mat, t, hitNormal)){
             hitNode = *it;
         }
@@ -191,13 +194,14 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     
     // TODO: superimpose model to world, to transform ray and eye into MCS
     glm::mat4 w2m = node.get_transform();
-    if(node.get_transform() != glm::mat4(1.0f)){
-        glm::mat4 w2m_inv = glm::inverse(w2m);
+    if(node.get_transform() != glm::mat4( 1.0f)){
+        glm::mat4 w2m_inv = node.get_inverse();
         
         eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0f));
         pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0f));
         
         dir = pixel - eye;
+        //dout(glm::to_string(dir));
     }
     
     // primitiveType is NonhierSphere
@@ -241,7 +245,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         NonhierBox * primPtr = static_cast<NonhierBox*>(node.m_primitive);
         
         // Assumes no transformation
-        assert(node.get_transform() == glm::mat4(1.0f));
+        //assert(node.get_transform() == glm::mat4(1.0f));
         
         glm::vec3 b0 = primPtr->m_pos;
         double size = primPtr->m_size;
@@ -295,10 +299,10 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         }
     }
     
-    hitNormal = glm::vec3(w2m*glm::vec4(hitNormal, 0.0f));
+    hitNormal = glm::vec3(glm::transpose(node.get_inverse())*glm::vec4(hitNormal, 0.0f));
     
     if (retBool) {
-        //dout("hit");
+        dout("hit");
     }
     
     // ignores other kinds of primitives for now
@@ -328,6 +332,7 @@ glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, 
 }
 
 void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
+    dout(root->m_name);
     if (root->m_nodeType==NodeType::GeometryNode) {
         // add it
         nodesList.insert(static_cast<GeometryNode*>(root));
@@ -335,7 +340,7 @@ void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
     
     for (SceneNode* node : root->children) {
         // set trans for hierarchical
-        //node->set_transform(node->get_transform() * root->get_transform());
+        node->set_transform(root->get_transform() * node->get_transform());
         extractNodes(node, nodesList);
     }
     return;
@@ -365,11 +370,15 @@ void A4_Render(
                const std::list<Light *> & lights
                ) {
     
-    size_t h = image.height();
-    size_t w = image.width();
+    int h = (int)image.height();
+    std::cout << h << std::endl;
+    int w = (int)image.width();
     
     // Fill in raytracing code here...
+    // Assume one pixel is one unit of length
     double d = h/(2*tan(glm::radians(fovy/2)));
+    double fovx = 2.0 * glm::atan((double)w/2, d);
+    glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
     
     // Extract all GeometryNode into a list
     std::set<GeometryNode*> nodesList;
@@ -380,19 +389,24 @@ void A4_Render(
      }
      **/
     
-    for (uint y = 0; y<h; ++y) {
+    for (int y = 0; y<h; ++y) {
         
-        for (uint x = 0; x < w; ++x) {
+        for (int x = 0; x < w; ++x) {
+            #ifdef RELEASE
             // clear screen
-            //std::cout << "\033[2J";
+            std::cout << "\033[2J";
             
             // print percentage on (1,1)
-            //std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
+            std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
+            #endif
             
             // Assume one pixel is width 1 unit, height 1 unit
             // Assume eye 800, lookAt -800, x, y 都一样, d > 0
             // TODO: maybe need to do superimpose to get more general mapping to WCS
-            glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
+            glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*glm::normalize(left);
+            
+            //glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
+            //glm::vec3 pointOnImage = eye + glm::normalize(primaryRay);
             //glm::vec4 primaryRay = glm::vec4(pointOnImage - eye, 0.0f);
             
             int lightNum = (int)lights.size();
@@ -411,7 +425,9 @@ void A4_Render(
         }
     }
     
+#ifdef RELEASE
     std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
+#endif
     std::cout << "Calling A4_Render(\n" <<
 		  "\t" << *root <<
     "\t" << "Image(width:" << image.width() << ", height:" << image.height() << ")\n"
