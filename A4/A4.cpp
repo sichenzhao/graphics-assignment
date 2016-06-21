@@ -414,17 +414,16 @@ void A4_Render(
     // background
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
-            if((x+y)%(51)==0 && (y-x)%(17)==0){
+            //if((x+y)%(51)==0 && (y-x)%(17)==0){
                 if (image(x, y, 0)==0 && image(x,y,1)==0 && image(x,y,2)==0) {
                     // Red: increasing from top to bottom
-                    image(x, y, 0) = (double)y / h;
+                    image(x, y, 0) = (double)(y%100) / 170;
                     // Green: increasing from left to right
-                    image(x, y, 1) = (double)x / w;
+                    image(x, y, 1) = (double)(x%40) / 100;
                     // Blue: in lower-left and upper-right corners
-                    image(x, y, 2) = ((y < h/2 && x < w/2)
-                                      || (y >= h/2 && x >= w/2)) ? 1.0 : 0.0;
+                    image(x, y, 2) = (double)((x+y)%10)/70;
                 }
-            }
+            //}
         }
     }
 }
