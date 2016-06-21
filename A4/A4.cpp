@@ -6,14 +6,13 @@
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
-#define RELEASE
-
-//m#define DEBUG_Z
+//#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
     std::cout << msg << std::endl;
 }
 #else
+#define RELEASE
 void dout(std::string msg){}
 #endif
 
@@ -202,6 +201,17 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         
         dir = pixel - eye;
         //dout(glm::to_string(dir));
+    }
+    
+    if (primitiveType == PrimType::Sphere) {
+        primitiveType = PrimType::NonhierSphere;
+        node.m_primitive = &(static_cast<Sphere*>(node.m_primitive))->realSphere;
+        dout("change");
+    }
+    
+    if (primitiveType == PrimType::Cube){
+        primitiveType = PrimType::NonhierBox;
+        node.m_primitive = &(static_cast<Cube*>(node.m_primitive))->realCube;
     }
     
     // primitiveType is NonhierSphere

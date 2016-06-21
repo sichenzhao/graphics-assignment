@@ -18,18 +18,6 @@ public:
     virtual ~Primitive();
 };
 
-class Sphere : public Primitive {
-public:
-    Sphere();
-    virtual ~Sphere();
-};
-
-class Cube : public Primitive {
-public:
-    Cube();
-    virtual ~Cube();
-};
-
 class NonhierSphere : public Primitive {
 public:
     NonhierSphere(const glm::vec3& pos, double radius)
@@ -55,4 +43,24 @@ public:
     
     glm::vec3 m_pos;
     double m_size;
+};
+
+class Sphere : public Primitive {
+public:
+    NonhierSphere realSphere;
+    Sphere()
+    : realSphere(NonhierSphere(glm::vec3(0.0f), 1.0)){
+        m_type = PrimType::Sphere;
+    }
+    virtual ~Sphere();
+};
+
+class Cube : public Primitive {
+public:
+    NonhierBox realCube;
+    Cube()
+    : realCube(NonhierBox(glm::vec3(0.0f), 1.0)){
+        m_type = PrimType::Cube;
+    }
+    virtual ~Cube();
 };

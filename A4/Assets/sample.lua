@@ -8,13 +8,12 @@ blue = gr.material({0.7, 0.6, 1}, {0.5, 0.4, 0.8}, 25)
 scene = gr.node('scene')
 scene:rotate('X', 23)
 scene:translate(6, -2, -15)
-scene:translate(0,0,-10)
-scene:rotate('Y', 60)
 
 -- the arc
 arc = gr.node('arc')
 scene:add_child(arc)
-
+arc:translate(0,0,-10)
+arc:rotate('Y', 60)
 p1 = gr.cube('p1')
 arc:add_child(p1)
 p1:set_material(gold)
@@ -32,7 +31,6 @@ arc:add_child(s)
 s:set_material(gold)
 s:scale(4, 0.6, 0.6)
 s:translate(0, 4, 0)
-
 
 -- The lights
 l1 = gr.light({200,200,400}, {0.8, 0.8, 0.8}, {1, 0, 0})

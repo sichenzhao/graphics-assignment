@@ -8,18 +8,8 @@ Primitive::~Primitive()
 {
 }
 
-Sphere::Sphere()
-{
-    m_type = PrimType::Sphere;
-}
-
 Sphere::~Sphere()
 {
-}
-
-Cube::Cube()
-{
-    m_type = PrimType::Cube;
 }
 
 Cube::~Cube()
