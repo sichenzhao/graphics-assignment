@@ -79,15 +79,15 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
          **/
         
         //diffuse
-        if (mat->m_kd != glm::vec3(0.0f) || !isShadow) {
+        if (mat->m_kd != glm::vec3(0.0f)) {
             // direct light
             col += directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
         }
         
         // specular
-        if (mat->m_ks != glm::vec3(0.0f) || !isShadow) {
+        if (mat->m_ks != glm::vec3(0.0f)) {
             // TODO: do specular recursively, no need for simple image now
-            col += indirectLight(mat->m_ks, hitPoint, hitNormal, light.position, light.colour, eye);
+            col += indirectLight(mat->m_ks, hitPoint, hitNormal, light.position, light.colour, eye, mat->m_shininess);
             return col;
         }
     }
@@ -95,19 +95,19 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
 }
 
 
-bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max){
+bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max, glm::vec3& normal){
     
     // init
     lt = infd;
     
-    double tmin, tmax, tymin, tymax, tzmin, tzmax;
+    double tmin, tmax, txmin, txmax, tymin, tymax, tzmin, tzmax;
     
     if (dir.x >= 0) {
-        tmin = (b0.x - eye.x) / dir.x;
-        tmax = (b1.x - eye.x) / dir.x;
+        txmin = tmin = (b0.x - eye.x) / dir.x;
+        txmax = tmax = (b1.x - eye.x) / dir.x;
     } else {
-        tmin = (b1.x - eye.x) / dir.x;
-        tmax = (b0.x - eye.x) / dir.x;
+        txmin = tmin = (b1.x - eye.x) / dir.x;
+        txmax = tmax = (b0.x - eye.x) / dir.x;
     }
     
     if (dir.y >= 0) {
@@ -146,12 +146,19 @@ bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, do
         assert(tmin <= tmax);
         // hits nh_cube
         lt = std::min(lt, tmin);
+        
+        if(lt > txmin - eps && lt < txmin + eps) normal = glm::vec3(1,0,0);
+        if (lt > txmax - eps && lt < txmax + eps) normal = glm::vec3(-1, 0, 0);
+        if (lt > tymin - eps && lt < tymin + eps) normal = glm::vec3(0, 1, 0);
+        if (lt > tymax - eps && lt < tymax + eps) normal = glm::vec3(0, -1, 0);
+        if (lt > tzmin - eps && lt < tzmin + eps) normal = glm::vec3(0, 0, 1);
+        if (lt > tzmax - eps && lt < tzmax + eps) normal = glm::vec3(0, 0, -1);
         return true;
     }
     return false;
 }
 
-bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max){
+bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max, glm::vec3& n){
     // Möller-Trumbore algorithm
     lt = infd;
     bool retBool = false;
@@ -182,6 +189,10 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     t = glm::dot(e2, Q)*inv_det;
     
     if((t > min) && (t < max)){
+        n = glm::cross(e1, e2);
+        if(glm::dot(n, dir) > 0 + eps){
+            n = -n;
+        }
         lt = t;
         return true;
     }
@@ -248,13 +259,16 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         glm::vec3 b1 = glm::vec3(b0.x + size, b0.y + size, b0.z + size);
         glm::vec3 dir = pixel - eye;
         
-        nhbBool = hitBoundingBox(b0, b1, eye, dir, lt, min, max);
+        glm::vec3 box_normal;
+        nhbBool = hitBoundingBox(b0, b1, eye, dir, lt, min, max, box_normal);
         
         retBool = retBool || nhbBool;
         if(nhbBool){
             if(lt < t){
                 // closest one
                 *mat = static_cast<PhongMaterial*>(node.m_material);
+                t = lt;
+                hitNormal = box_normal;
             }
         }
     }
@@ -263,6 +277,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     if (primitiveType == PrimType::Mesh) {
         bool mBool = false;
         double tMesh = infd;
+        glm::vec3 normalTriangle;
         Mesh * primPtr = static_cast<Mesh*>(node.m_primitive);
         
         glm::vec3 dir = pixel - eye;
@@ -271,14 +286,15 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         
         for(auto it = primPtr->m_faces.begin(); it != primPtr->m_faces.end(); it++){
             // TODO: after considering scaling, no need to multiply by 100
-            glm::vec3 v1, v2, v3;
+            glm::vec3 v1, v2, v3, n;
             v1 = primPtr->m_vertices[(*it).v1] * 100;
             v2 = primPtr->m_vertices[(*it).v2] * 100;
             v3 = primPtr->m_vertices[(*it).v3] * 100;
-            if(hitTriangle(v1, v2, v3, eye, dir, lt, min, max)){
+            if(hitTriangle(v1, v2, v3, eye, dir, lt, min, max, n)){
                 mBool = true;
                 if(lt < tMesh){
                     tMesh = lt;
+                    normalTriangle = n;
                 }
             }
         }
@@ -288,6 +304,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
             if(tMesh < t){
                 t = tMesh;
                 *mat = static_cast<PhongMaterial*>(node.m_material);
+                hitNormal = normalTriangle;
             }
         }
     }
@@ -311,14 +328,14 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, gl
 }
 
 // indirect light for specular
-glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye){
+glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye, double shininess){
     glm::vec3 col = glm::vec3(0.0f);
     glm::vec3 V = glm::normalize(eye - hitPoint);
     glm::vec3 R = glm::normalize(glm::reflect(- lp + hitPoint, hitNormal));
     
-    col.r += lc.r * mks.r * glm::dot(V,R);
-    col.g += lc.g * mks.g * glm::dot(V,R);
-    col.b += lc.b * mks.b * glm::dot(V,R);
+    col.r += lc.r * mks.r * pow(glm::dot(V,R), shininess);
+    col.g += lc.g * mks.g * pow(glm::dot(V,R), shininess);
+    col.b += lc.b * mks.b * pow(glm::dot(V,R), shininess);
     return col;
 }
 

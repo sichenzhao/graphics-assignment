@@ -32,12 +32,12 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 p, Light light, int lightNum, std::s
 
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc);
 
-glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye);
+glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye, double shininess);
 
 void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList);
 
 bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max);
 
-bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max);
+bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max, glm::vec3 &normal);
 
 bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial** mat, double &t, glm::vec3 &hitNormal, double min = 1, double max = std::numeric_limits<double>::infinity());
