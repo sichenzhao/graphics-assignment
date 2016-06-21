@@ -41,58 +41,53 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         col.g = mat->m_kd.g*(ambient.g)/lightNum;
         col.b = mat->m_kd.b*(ambient.b)/lightNum;
         
-        //diffuse
-        if (mat->m_kd != glm::vec3(0.0f)) {
-            glm::vec3 hitPoint = eye + t*(pixelPoint - eye);
-            
-            // determine shadow
-            bool isShadow = false;
-            
-            // shadow for itself
-            PrimType hitObjType = hitNode->m_primitive->m_type;
-            if (hitObjType == PrimType::NonhierSphere){
-                NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
-                isShadow = (glm::dot(hitPoint - primPtr->m_pos, light.position - hitPoint) < 0);
-            } else if(hitObjType == PrimType::NonhierBox){
-                NonhierBox * primPtr = static_cast<NonhierBox*>(hitNode->m_primitive);
-                glm::vec3 lp = light.position;
-                glm::vec3 cc = primPtr->m_pos;
-                double cs = primPtr->m_size;
-                assert(cs>0);
-                if(((hitPoint.x == cc.x) && (lp.x>cc.x))
-                   ||((hitPoint.x == cc.x+cs) && (lp.x<cc.x+cs))
-                   ||((hitPoint.y == cc.y) && (lp.y>cc.y))
-                   ||((hitPoint.y == cc.y+cs) && (lp.y<cc.y+cs))
-                   ||((hitPoint.z == cc.z) && (lp.z>cc.z))
-                   ||((hitPoint.z == cc.z+cs) && (lp.z<cc.z+cs))){
-                    isShadow = true;
-                }
-            }
-            
-            // TODO: shadow of others
-            /**
-            for(auto it = nodes.begin(); it != nodes.end(); it++) {
-                if(isShadow) break;
-                if(*it==hitNode) continue;
-                PhongMaterial* tmp = NULL;
-                double tmpt = infd;
-                isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
-            }
-             **/
-            
-            // TODO: shadow is not working for now (everything is shadowed)
-            if(isShadow){
-                // shadow, no direct
-                // std::dout << "shadow" << i << std::endl;
-            }else {
-                // direct light
-                col = directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
+        glm::vec3 hitPoint = eye + t*(pixelPoint - eye);
+        
+        // determine shadow
+        bool isShadow = false;
+        
+        // shadow for itself
+        PrimType hitObjType = hitNode->m_primitive->m_type;
+        if (hitObjType == PrimType::NonhierSphere){
+            NonhierSphere * primPtr = static_cast<NonhierSphere*>(hitNode->m_primitive);
+            isShadow = (glm::dot(hitPoint - primPtr->m_pos, light.position - hitPoint) < 0);
+        } else if(hitObjType == PrimType::NonhierBox){
+            NonhierBox * primPtr = static_cast<NonhierBox*>(hitNode->m_primitive);
+            glm::vec3 lp = light.position;
+            glm::vec3 cc = primPtr->m_pos;
+            double cs = primPtr->m_size;
+            assert(cs>0);
+            if(((hitPoint.x == cc.x) && (lp.x>cc.x))
+               ||((hitPoint.x == cc.x+cs) && (lp.x<cc.x+cs))
+               ||((hitPoint.y == cc.y) && (lp.y>cc.y))
+               ||((hitPoint.y == cc.y+cs) && (lp.y<cc.y+cs))
+               ||((hitPoint.z == cc.z) && (lp.z>cc.z))
+               ||((hitPoint.z == cc.z+cs) && (lp.z<cc.z+cs))){
+                isShadow = true;
             }
         }
         
+        // TODO: shadow of others
+        /**
+         for(auto it = nodes.begin(); it != nodes.end(); it++) {
+         if(isShadow) break;
+         if(*it==hitNode) continue;
+         PhongMaterial* tmp = NULL;
+         double tmpt = infd;
+         isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, 0, 1);
+         }
+         **/
+        
+        //diffuse
+        if (mat->m_kd != glm::vec3(0.0f) || !isShadow) {
+            // direct light
+            col += directLight(mat->m_kd, hitPoint, hitNormal, light.position, light.colour);
+        }
+        
         // specular
-        if (mat->m_ks != glm::vec3(0.0f)) {
+        if (mat->m_ks != glm::vec3(0.0f) || !isShadow) {
             // TODO: do specular recursively, no need for simple image now
+            col += indirectLight(mat->m_ks, hitPoint, hitNormal, light.position, light.colour, eye);
             return col;
         }
     }
@@ -307,19 +302,23 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, gl
     // TODO: consider light falloff based on distance
     //double r = glm::dot(lp - hitPoint, lp - hitPoint);
     glm::vec3 L = glm::normalize((lp - hitPoint));
-    if (glm::dot(lp - hitPoint, hitNormal)) {
-        dout("neg dot");
-        dout(glm::to_string(hitPoint - hitNormal) + " is center");
-       // dout(glm::to_string(hitNormal) + " is hitNormal");
-       // dout(glm::to_string(lp - hitPoint) + " is L");
-        
-       // dout(glm::to_string(lp) + " is lp");
-    }
 
     hitNormal = glm::normalize(hitNormal);
     col.r += lc.r * mkd.r * glm::dot(L, hitNormal);
     col.g += lc.g * mkd.g * glm::dot(L, hitNormal);
     col.b += lc.b * mkd.b * glm::dot(L, hitNormal);
+    return col;
+}
+
+// indirect light for specular
+glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye){
+    glm::vec3 col = glm::vec3(0.0f);
+    glm::vec3 V = glm::normalize(eye - hitPoint);
+    glm::vec3 R = glm::normalize(glm::reflect(- lp + hitPoint, hitNormal));
+    
+    col.r += lc.r * mks.r * glm::dot(V,R);
+    col.g += lc.g * mks.g * glm::dot(V,R);
+    col.b += lc.b * mks.b * glm::dot(V,R);
     return col;
 }
 
@@ -395,11 +394,9 @@ void A4_Render(
                 image(x,y,1) += col.y;
                 image(x,y,2) += col.z;
             }
-            /**
             image(x,y,0) = std::max(0.0, std::min(1.0, image(x,y,0)));
             image(x,y,1) = std::max(0.0, std::min(1.0, image(x,y,1)));
             image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
-             **/
         }
     }
     

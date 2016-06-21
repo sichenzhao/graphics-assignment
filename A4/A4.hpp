@@ -32,6 +32,8 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 p, Light light, int lightNum, std::s
 
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc);
 
+glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye);
+
 void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList);
 
 bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max);
