@@ -6,7 +6,7 @@
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
-//#define DEBUG_Z
+#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
     std::cout << msg << std::endl;
@@ -55,7 +55,8 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             PhongMaterial* tmp = NULL;
             double tmpt = infd;
             glm::vec3 tmpNormal = glm::vec3(0.0f);
-            isShadow = isShadow || (hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1) && tmpt < 1+eps && tmpt > 0-eps);
+            //isShadow = isShadow || (hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1) && tmpt < 1+eps && tmpt > 0-eps);
+            isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1);
         }
         
         
@@ -167,7 +168,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     t = glm::dot(e2, Q)*inv_det;
     
-    if((t > min) && (t < max)){
+    if((t > min-eps) && (t < max+eps)){
         n = glm::cross(e1, e2);
         if(glm::dot(n, dir) > 0 + eps){
             n = -n;
@@ -200,7 +201,6 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0f));
         
         dir = pixel - eye;
-        //dout(glm::to_string(dir));
     }
     
     if (primitiveType == PrimType::Sphere) {
@@ -227,9 +227,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         
         if(determ < 0 - eps){
             // no root
-        } else {
-            nhsBool = true;
-            if(determ < 0 + eps){
+        } else {            if(determ < 0 + eps){
                 // one root
                 lt = -B/(2*A);
             } else {
@@ -237,8 +235,9 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 lt = -B - sqrt(determ);
                 lt = lt / (2*A);
             }
-            if(lt >= min + eps && lt < max - eps){
+            if(lt >= min - eps && lt < max + eps){
                 if(lt < t){
+                    nhsBool = true;
                     // closest one
                     *mat = static_cast<PhongMaterial*>(node.m_material);
                     t = lt;
@@ -311,10 +310,10 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     
     hitNormal = glm::vec3(glm::transpose(node.get_inverse())*glm::vec4(hitNormal, 0.0f));
     
-    if (retBool) {
-        dout("hit");
+    if(retBool){
+        assert(t>min-eps);
+        assert(t<max+eps);
     }
-    
     // ignores other kinds of primitives for now
     return retBool;
 }
