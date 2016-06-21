@@ -364,9 +364,13 @@ void A4_Render(
      **/
     
     for (uint y = 0; y<h; ++y) {
+        
         for (uint x = 0; x < w; ++x) {
+            // clear screen
+            std::cout << "\033[2J";
             
-            //std::cout << (y*w + x)*100/(h*w) << "%" << std::endl;
+            // print percentage on (1,1)
+            std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
             
             // Assume one pixel is width 1 unit, height 1 unit
             // Assume eye 800, lookAt -800, x, y 都一样, d > 0
@@ -407,6 +411,7 @@ void A4_Render(
     std::cout << "\t}" << std::endl;
     std::cout <<")" << std::endl;
     
+    // background
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
             if((x+y)%(51)==0 && (y-x)%(17)==0){
