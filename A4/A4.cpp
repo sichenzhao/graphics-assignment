@@ -272,14 +272,30 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         glm::vec3 normalTriangle;
         Mesh * primPtr = static_cast<Mesh*>(node.m_primitive);
         
-        //std::cout << primPtr->m_faces.size() << std::endl;
+#ifdef BV
+        float xmin, xmax, ymin, ymax, zmin, zmax;
+        xmin = ymin = zmin = inff;
+        xmax = ymax = zmax = -inff;
         
+        for (auto it = primPtr->m_vertices.begin(); it != primPtr->m_vertices.end(); it++) {
+            glm::vec3 v1 = *it;
+            
+            xmin = std::min({v1.x, xmin});
+            ymin = std::min({v1.y, ymin});
+            zmin = std::min({v1.z, zmin});
+            
+            xmax = std::max({v1.x, xmax});
+            ymax = std::max({v1.y, ymax});
+            zmax = std::max({v1.z, zmax});
+        }
+#else
         for(auto it = primPtr->m_faces.begin(); it != primPtr->m_faces.end(); it++){
             // TODO: after considering scaling, no need to multiply by 100
             glm::vec3 v1, v2, v3, n;
             v1 = primPtr->m_vertices[(*it).v1];
             v2 = primPtr->m_vertices[(*it).v2];
             v3 = primPtr->m_vertices[(*it).v3];
+
             if(hitTriangle(v1, v2, v3, eye, dir, lt, min, max, n)){
                 mBool = true;
                 if(lt < tMesh){
@@ -288,6 +304,18 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 }
             }
         }
+#endif
+        
+#ifdef BV
+        glm::vec3 b0 = glm::vec3(xmin, ymin, zmin);
+        glm::vec3 b1 = glm::vec3(xmax, ymax, zmax);
+        mBool = hitBoundingBox(b0, b1, eye, dir, lt, min, max, normalTriangle);
+        if(mBool){
+            if(lt < tMesh){
+                tMesh = lt;
+            }
+        }
+#endif
         
         retBool = retBool || mBool;
         if(mBool){

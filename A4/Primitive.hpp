@@ -1,5 +1,6 @@
 #pragma once
 
+#define BV
 #include <glm/glm.hpp>
 
 enum class PrimType {
