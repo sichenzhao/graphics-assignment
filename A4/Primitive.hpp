@@ -26,6 +26,8 @@ public:
     double xmin, xmax, ymin, ymax, zmin, zmax;
     BoundingVolume(){}
     BoundingVolume(std::vector<glm::vec3> m_vertices){
+        xmin = ymin = zmin = +std::numeric_limits<float>::infinity();
+        xmax = ymax = zmax = -std::numeric_limits<float>::infinity();
         m_type = PrimType::BoundingVolume;
         for (auto it = m_vertices.begin(); it != m_vertices.end(); it++) {
             glm::vec3 tmp = *it;
