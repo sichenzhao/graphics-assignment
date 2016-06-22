@@ -6,13 +6,13 @@
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
-#define DEBUG_Z
+//#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
     std::cout << msg << std::endl;
 }
 #else
-#define RELEASE
+//#define RELEASE
 void dout(std::string msg){}
 #endif
 
@@ -170,7 +170,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     if((t > min-eps) && (t < max+eps)){
         n = glm::cross(e1, e2);
-        if(glm::dot(n, dir) > 0 + eps){
+        if(glm::dot(n, dir) > 0 - eps){
             n = -n;
         }
         lt = t;
@@ -392,11 +392,13 @@ void A4_Render(
     // Extract all GeometryNode into a list
     std::set<GeometryNode*> nodesList;
     extractNodes(root, nodesList);
+
     /**
      for (auto it = nodesList.begin(); it != nodesList.end(); it++) {
-     std::dout << (*it)->m_name << std::endl;
+         std::cout << (*it)->m_name << std::endl;
      }
      **/
+
     
     for (int y = 0; y<h; ++y) {
         

@@ -21,8 +21,8 @@ plane:scale(30, 30, 30)
 plane:rotate('X', 90-23)
 plane:translate(0, 0, 20)
 
-s1 = gr.nh_sphere('s1', {0, 0, -400}, 100)
-scene:add_child(s1)
+s1 = gr.nh_sphere('s1', {0, 0, -400}, 3)
+--scene:add_child(s1)
 s1:set_material(stone)
 
 -- Construct a central altar in the shape of a buckyball.  The
