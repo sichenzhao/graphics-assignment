@@ -12,27 +12,23 @@ void dout(std::string msg){
     std::cout << msg << std::endl;
 }
 #else
-//#define RELEASE
+#define RELEASE
 void dout(std::string msg){}
 #endif
 
 static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
-static const float eps = FLT_EPSILON;
+//static const float eps = FLT_EPSILON;
+static const float eps = 0.00001;
 
-glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, std::set<GeometryNode*> nodes, const glm::vec3 & ambient){
+glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0f);
     glm::vec3 hitNormal = glm::vec3(0.0f);
     double t = infd;
     PhongMaterial* mat = NULL;
-    GeometryNode* hitNode = NULL;
-    for (auto it = nodes.begin(); it != nodes.end(); it++) {
-//        dout((**it).m_name);
-        if(hit(eye, pixelPoint, **it, &mat, t, hitNormal)){
-            hitNode = *it;
-        }
-    }
-    if(infd==t || NULL==mat || NULL==hitNode){
+    hitWrapper(root, eye, pixelPoint, &mat, t, hitNormal, glm::mat4(1.0f));
+    
+    if(infd==t || NULL==mat){
         // return background
         return col;
     } else {
@@ -49,16 +45,12 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         bool isShadow = false;
         
         // TODO: shadow of others
-        for(auto it = nodes.begin(); it != nodes.end(); it++) {
-            if(isShadow) break;
-            if(*it==hitNode) continue;
+        {
             PhongMaterial* tmp = NULL;
             double tmpt = infd;
             glm::vec3 tmpNormal = glm::vec3(0.0f);
-            //isShadow = isShadow || (hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1) && tmpt < 1+eps && tmpt > 0-eps);
-            isShadow = isShadow || hit(hitPoint, light.position, **it, &tmp, tmpt, tmpNormal, 0, 1);
+            isShadow = hitWrapper(root, hitPoint, light.position, &tmp, tmpt, tmpNormal,  glm::mat4(1.0f), 0+eps, 1-eps);
         }
-        
         
         if (!isShadow) {
             // diffuse
@@ -160,17 +152,17 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     T = eye - v1;
     u = glm::dot(T, P) * inv_det;
-    if(u < 0 || u > 1) return false;
+    if(u < eps || u > 1-eps) return false;
     
     Q = glm::cross(T, e1);
     v = glm::dot(dir, Q) * inv_det;
-    if(v<0 || u+v > 1) return false;
+    if(v<eps || u+v > 1-eps) return false;
     
     t = glm::dot(e2, Q)*inv_det;
     
     if((t > min-eps) && (t < max+eps)){
         n = glm::cross(e1, e2);
-        if(glm::dot(n, dir) > 0 - eps){
+        if(glm::dot(n, dir) > -eps){
             n = -n;
         }
         lt = t;
@@ -184,7 +176,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
 // TODO: hit functions for all primaries
 // updated t and material if got intersection with less but greater than one t
 // TODO: what if the pixel is inside some primitives? -- should be black?
-bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, glm::vec3 &hitNormal, double min, double max){
+bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat, double &t, glm::vec3 &hitNormal, glm::mat4 invM, double min, double max){
     bool retBool = false;
     PrimType primitiveType = node.m_primitive->m_type;
     double lt = infd;
@@ -206,7 +198,6 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     if (primitiveType == PrimType::Sphere) {
         primitiveType = PrimType::NonhierSphere;
         node.m_primitive = &(static_cast<Sphere*>(node.m_primitive))->realSphere;
-        dout("change");
     }
     
     if (primitiveType == PrimType::Cube){
@@ -308,13 +299,34 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         }
     }
     
-    hitNormal = glm::vec3(glm::transpose(node.get_inverse())*glm::vec4(hitNormal, 0.0f));
+    hitNormal = glm::vec3(glm::inverse(invM)*glm::vec4(hitNormal, 0.0f));
     
     if(retBool){
         assert(t>min-eps);
         assert(t<max+eps);
     }
     // ignores other kinds of primitives for now
+    return retBool;
+}
+
+// recursive wrapper of hit function
+bool hitWrapper(SceneNode* root, glm::vec3 eye, glm::vec3 pixel, PhongMaterial** mat, double &t, glm::vec3 &hitNormal, glm::mat4 invM, double min, double max){
+    bool retBool = false;
+    
+    if(root->m_nodeType == NodeType::GeometryNode){
+        GeometryNode* gnodep = static_cast<GeometryNode*>(root);
+        retBool = hit(eye, pixel, *gnodep, mat, t, hitNormal, invM, min, max) || retBool;
+    } else {
+        glm::mat4 w2m_inv = root->get_inverse();
+        invM = w2m_inv * invM;
+        //invM = invM * w2m_inv;
+        
+        eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0f));
+        pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0f));
+        for(SceneNode* child : root->children){
+            retBool = hitWrapper(child, eye, pixel, mat, t, hitNormal, invM, min, max) || retBool;
+        }
+    }
     return retBool;
 }
 
@@ -338,21 +350,6 @@ glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, 
     
     col = mks * pow(std::max(glm::dot(V, R), 0.0f), shininess) * lc;
     return col;
-}
-
-void extractNodes(SceneNode* root, std::set<GeometryNode*> &nodesList) {
-    dout(root->m_name);
-    if (root->m_nodeType==NodeType::GeometryNode) {
-        // add it
-        nodesList.insert(static_cast<GeometryNode*>(root));
-    }
-    
-    for (SceneNode* node : root->children) {
-        // set trans for hierarchical
-        node->set_transform(root->get_transform() * node->get_transform());
-        extractNodes(node, nodesList);
-    }
-    return;
 }
 
 void printColor(int x, int y, int r, int g, int b) {
@@ -388,18 +385,7 @@ void A4_Render(
     double d = h/(2*tan(glm::radians(fovy/2)));
     double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
-    
-    // Extract all GeometryNode into a list
-    std::set<GeometryNode*> nodesList;
-    extractNodes(root, nodesList);
 
-    /**
-     for (auto it = nodesList.begin(); it != nodesList.end(); it++) {
-         std::cout << (*it)->m_name << std::endl;
-     }
-     **/
-
-    
     for (int y = 0; y<h; ++y) {
         
         for (int x = 0; x < w; ++x) {
@@ -424,7 +410,7 @@ void A4_Render(
             for (auto it = lights.begin(); it != lights.end(); it++) {
                 // TODO: merge multiple light sources effects
                 // Right now, the first non-black wins
-                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, nodesList, ambient);
+                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient);
                 //printColor(x, y, col.x, col.y, col.z);
                 image(x,y,0) += col.x;
                 image(x,y,1) += col.y;
