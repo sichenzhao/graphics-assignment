@@ -29,5 +29,10 @@ public:
     std::vector<glm::vec3> m_vertices;
     std::vector<Triangle> m_faces;
     
+#ifdef BV
+    // Bounding Volume box
+    BoundingVolume bvb;
+#endif
+    
     friend std::ostream& operator<<(std::ostream& out, const Mesh& mesh);
 };
