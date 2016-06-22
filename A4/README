@@ -1,0 +1,35 @@
+Compilation
+To compile A4 program, you just need to do following command in /A4 directory
+    1. premake4 gmake
+    2. make
+Two commands above will generate an executable file 'A4' in /A4 directory
+There is no change on premake4.lua or Makefile.
+Note: This command has to be done in condition that shared library is built. 
+      (means that you have to run make successfully in /cs488 directory)
+
+After generating the A4 executable file, you can just execute it by running
+command: './A4 Assets/<lua file>'
+
+I finished this assignment on lab computer /gl17
+
+Manual
+Following the assignment requirements.
+
+I changed the "scene_lua.cpp" file so that it will add prefix "Assets/" to all
+".obj" files.  So you need to run "./A4 Assets/<lua file>" under A4 directory.
+
+I use box bound volume for mesh. It dramatically improves the rendering speed.
+For macho-cows.lua, it takes more than few minutes without bound volume, but it
+can be done within 20 seconds with bound volume.
+
+By default, bound volume is turned off. If you want my code do it, please define
+"BV" during compile time. For your convinience, I also compiled a bound volume
+executable as "A4-bb". By which I mean, you can simply run "./A4-bb Assets/<lua file>"
+in order to get a bound volume version of graphs.
+
+Bug: 
+1. percentage is displayed perfectly on my laptop but not on lab machine, it
+flashes some times.
+2. shadow looks odd on some meshes, and although simple-cow has shadow, macho-cow doesn't
+
+Note: Extra features not implemented
