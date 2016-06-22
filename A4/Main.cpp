@@ -1,6 +1,5 @@
 #include <iostream>
 #include "scene_lua.hpp"
-
 int main(int argc, char** argv)
 {
   std::string filename = "Assets/simple.lua";

@@ -1,7 +1,8 @@
 #pragma once
 
-#define BV
+#include <vector>
 #include <glm/glm.hpp>
+#define BV
 
 enum class PrimType {
     Primitive,
@@ -9,7 +10,8 @@ enum class PrimType {
     Cube,
     NonhierSphere,
     NonhierBox,
-    Mesh
+    Mesh,
+    BoundingVolume
 };
 
 class Primitive {
@@ -17,6 +19,27 @@ public:
     PrimType m_type;
     Primitive();
     virtual ~Primitive();
+};
+
+class BoundingVolume : public Primitive {
+public:
+    double xmin, xmax, ymin, ymax, zmin, zmax;
+    BoundingVolume(){}
+    BoundingVolume(std::vector<glm::vec3> m_vertices){
+        xmin = ymin = zmin = +std::numeric_limits<float>::infinity();
+        xmax = ymax = zmax = -std::numeric_limits<float>::infinity();
+        m_type = PrimType::BoundingVolume;
+        for (auto it = m_vertices.begin(); it != m_vertices.end(); it++) {
+            glm::vec3 tmp = *it;
+            xmin = std::min(xmin, (double)tmp.x);
+            ymin = std::min(ymin, (double)tmp.y);
+            zmin = std::min(zmin, (double)tmp.z);
+            xmax = std::max(xmax, (double)tmp.x);
+            ymax = std::max(ymax, (double)tmp.y);
+            zmax = std::max(zmax, (double)tmp.z);
+        }
+    }
+    virtual ~BoundingVolume();
 };
 
 class NonhierSphere : public Primitive {

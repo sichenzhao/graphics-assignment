@@ -8,6 +8,10 @@ Primitive::~Primitive()
 {
 }
 
+BoundingVolume::~BoundingVolume()
+{
+}
+
 Sphere::~Sphere()
 {
 }
