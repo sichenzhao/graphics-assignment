@@ -152,17 +152,17 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     T = eye - v1;
     u = glm::dot(T, P) * inv_det;
-    if(u < eps || u > 1-eps) return false;
+    if(u < eps || u > 1+eps) return false;
     
     Q = glm::cross(T, e1);
     v = glm::dot(dir, Q) * inv_det;
-    if(v<eps || u+v > 1-eps) return false;
+    if(v<eps || u+v > 1+eps) return false;
     
     t = glm::dot(e2, Q)*inv_det;
     
-    if((t > min-eps) && (t < max+eps)){
+    if((t > min+eps) && (t < max-eps)){
         n = glm::cross(e1, e2);
-        if(glm::dot(n, dir) > -eps){
+        if(glm::dot(n, dir) > +eps){
             n = -n;
         }
         lt = t;
@@ -226,7 +226,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
                 lt = -B - sqrt(determ);
                 lt = lt / (2*A);
             }
-            if(lt >= min - eps && lt < max + eps){
+            if(lt >= min + eps && lt < max - eps){
                 if(lt < t){
                     nhsBool = true;
                     // closest one
@@ -302,8 +302,8 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
     hitNormal = glm::vec3(glm::inverse(invM)*glm::vec4(hitNormal, 0.0f));
     
     if(retBool){
-        assert(t>min-eps);
-        assert(t<max+eps);
+        assert(t>min+eps);
+        assert(t<max-eps);
     }
     // ignores other kinds of primitives for now
     return retBool;
