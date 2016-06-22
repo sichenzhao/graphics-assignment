@@ -162,7 +162,7 @@ bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::v
     
     if((t > min+eps) && (t < max-eps)){
         n = glm::cross(e1, e2);
-        if(glm::dot(n, dir) > +eps){
+        if(glm::dot(n, dir) > 0-eps){
             n = -n;
         }
         lt = t;
@@ -311,7 +311,7 @@ bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial **mat,
         }
     }
     
-    hitNormal = glm::vec3(glm::inverse(invM)*glm::vec4(hitNormal, 0.0f));
+    hitNormal = glm::vec3(glm::transpose(invM)*glm::vec4(hitNormal, 0.0f));
     
     if(retBool){
         assert(t>min+eps);
@@ -389,7 +389,6 @@ void A4_Render(
                ) {
     
     int h = (int)image.height();
-    std::cout << h << std::endl;
     int w = (int)image.width();
     
     // Fill in raytracing code here...

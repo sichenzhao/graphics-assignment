@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <glm/glm.hpp>
-#define BV
+//#define BV
 
 enum class PrimType {
     Primitive,
