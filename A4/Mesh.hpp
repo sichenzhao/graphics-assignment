@@ -23,8 +23,11 @@ struct Triangle
 
 // A polygonal mesh.
 class Mesh : public Primitive {
+    bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max, glm::vec3& n);
 public:
     Mesh( const std::string& fname );
+    
+    std::shared_ptr<IntersecInfo> intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max);
     
     std::vector<glm::vec3> m_vertices;
     std::vector<Triangle> m_faces;

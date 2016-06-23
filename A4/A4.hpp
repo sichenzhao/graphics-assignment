@@ -34,10 +34,6 @@ glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, gl
 
 glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye, double shininess);
 
-bool hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 eye, glm::vec3 dir, double &lt, const double min, const double max);
+std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::vec3 pixel, PhongMaterial** mat, double &t, glm::vec3 &hitNormal, glm::mat4 invM, double min = 0, double max = std::numeric_limits<double>::infinity());
 
-bool hitBoundingBox(glm::vec3 b0, glm::vec3 b1, glm::vec3 eye, glm::vec3 dir, double &lt, double min, double max, glm::vec3 &normal);
-
-bool hitWrapper(SceneNode* root, glm::vec3 eye, glm::vec3 pixel, PhongMaterial** mat, double &t, glm::vec3 &hitNormal, glm::mat4 invM, double min = 0, double max = std::numeric_limits<double>::infinity());
-
-bool hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, PhongMaterial** mat, double &t, glm::vec3 &hitNormal, glm::vec3 &hitNode, glm::mat4 invM, double min = 0, double max = std::numeric_limits<double>::infinity());
+std::shared_ptr<IntersecInfo> hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, glm::mat4 invM, double min = 0, double max = std::numeric_limits<double>::infinity());
