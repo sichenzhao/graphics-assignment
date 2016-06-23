@@ -14,6 +14,7 @@ arc = gr.node('arc')
 scene:add_child(arc)
 arc:translate(0,0,-10)
 arc:rotate('Y', 60)
+
 p1 = gr.cube('p1')
 arc:add_child(p1)
 p1:set_material(gold)

@@ -30,8 +30,8 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     // init
     double lt = infd;
     
-    glm::vec4 b0 = glm::vec4(xmin, ymin, zmin, 0.0f);
-    glm::vec4 b1 = glm::vec4(xmax, ymax, zmax, 0.0f);
+    glm::vec4 b0 = glm::vec4(xmin, ymin, zmin, 0.0);
+    glm::vec4 b1 = glm::vec4(xmax, ymax, zmax, 0.0);
     
     glm::vec3 normal;
     
@@ -88,7 +88,7 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
         if (lt > tymax - eps && lt < tymax + eps) normal = glm::vec3(0, -1, 0);
         if (lt > tzmin - eps && lt < tzmin + eps) normal = glm::vec3(0, 0, 1);
         if (lt > tzmax - eps && lt < tzmax + eps) normal = glm::vec3(0, 0, -1);
-        return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0f), p + ((float)lt * ray), true, lt));
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt));
     }
     return NULL;
 }
@@ -98,7 +98,7 @@ BoundingVolume::~BoundingVolume()
 }
 
 Sphere::Sphere()
-: realSphere(NonhierSphere(glm::vec3(0.0f), 1.0)){
+: realSphere(NonhierSphere(glm::vec3(0.0), 1.0)){
     m_type = PrimType::Sphere;
 }
 
@@ -111,7 +111,7 @@ Sphere::~Sphere()
 }
 
 Cube::Cube()
-: realCube(NonhierBox(glm::vec3(0.0f), 1.0)){
+: realCube(NonhierBox(glm::vec3(0.0), 1.0)){
     m_type = PrimType::Cube;
 }
 
@@ -133,8 +133,8 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     double lt = infd;
     bool nhsBool = false;
     
-    glm::vec4 center = glm::vec4(m_pos, 1.0f);
-    glm::vec4 hitNormal = glm::vec4(0.0f);
+    glm::vec4 center = glm::vec4(m_pos, 1.0);
+    glm::vec4 hitNormal = glm::vec4(0.0);
     
     float A = glm::dot(ray, ray);
     float B = glm::dot(p - center, ray);

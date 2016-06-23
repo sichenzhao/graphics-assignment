@@ -18,11 +18,11 @@ void dout(std::string msg){}
 
 // TODO: pass object pointers instead of all real values or reference to speed up
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient){
-    glm::vec3 col = glm::vec3(0.0f);
-    glm::vec3 hitNormal = glm::vec3(0.0f);
+    glm::vec3 col = glm::vec3(0.0);
+    glm::vec3 hitNormal = glm::vec3(0.0);
     double t = infd;
     PhongMaterial* mat = NULL;
-    std::shared_ptr<IntersecInfo> hitInfo = hitWrapper(root, eye, pixelPoint, &mat, t, hitNormal, glm::mat4(1.0f));
+    std::shared_ptr<IntersecInfo> hitInfo = hitWrapper(root, eye, pixelPoint, &mat, t, hitNormal, glm::mat4(1.0));
     
     if(hitInfo == NULL){
         // return background
@@ -43,8 +43,8 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         {
             PhongMaterial* tmp = NULL;
             double tmpt = infd;
-            glm::vec3 tmpNormal = glm::vec3(0.0f);
-            std::shared_ptr<IntersecInfo>tmpPtr = hitWrapper(root, glm::vec3(hitInfo->hitPoint), light.position, &tmp, tmpt, tmpNormal,  glm::mat4(1.0f), 0+eps, 1-eps);
+            glm::vec3 tmpNormal = glm::vec3(0.0);
+            std::shared_ptr<IntersecInfo>tmpPtr = hitWrapper(root, glm::vec3(hitInfo->hitPoint), light.position, &tmp, tmpt, tmpNormal,  glm::mat4(1.0), 0+eps, 1-eps);
             isShadow = (tmpPtr==NULL)? false : tmpPtr->isIntersect;
         }
         
@@ -63,52 +63,24 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
 
 
 std::shared_ptr<IntersecInfo> hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode node, glm::mat4 invM, double min, double max){
-    PrimType primitiveType = node.m_primitive->m_type;
-    
-    glm::vec4 eye4 = glm::vec4(eye, 1.0f);
+    glm::vec4 eye4 = glm::vec4(eye, 1.0);
     // primary ray
-    glm::vec4 ray = glm::vec4(pixel - eye, 0.0f);
+    glm::vec4 ray = glm::vec4(pixel - eye, 0.0);
     
     std::shared_ptr<IntersecInfo> retInfo = NULL;
     
     // TODO: just call the same virtual function
-    // Cube
-    if (primitiveType == PrimType::Sphere) {
-        primitiveType = PrimType::NonhierSphere;
-        node.m_primitive = &(static_cast<Sphere*>(node.m_primitive))->realSphere;
-    }
+    retInfo = node.m_primitive->intersect(eye4, ray, min, max);
     
-    // NonhierBox
-    if (primitiveType == PrimType::NonhierBox) {
-        retInfo = node.m_primitive->intersect(eye4, ray, min, max);
-    }
-    
-    // sphere
-    if (primitiveType == PrimType::Cube){
-        primitiveType = PrimType::NonhierBox;
-        node.m_primitive = &(static_cast<Cube*>(node.m_primitive))->realCube;
-    }
-    
-    // NonhierSphere
-    if (primitiveType == PrimType::NonhierSphere) {
-        retInfo = node.m_primitive->intersect(eye4, ray, min, max);
-    }
-
-    // primitiveType is Mesh
-    if (primitiveType == PrimType::Mesh) {
-        retInfo = node.m_primitive->intersect(eye4, ray, min, max);
-    }
-    
-    //hitNormal = glm::vec3(glm::transpose(invM)*glm::vec4(hitNormal, 0.0f));
-    
-    if(retInfo!=NULL && retInfo->isIntersect){
+    if(retInfo!=NULL){
         if(retInfo->t < min+eps){
             std::cout << retInfo->t << std::endl;
         }
         assert(retInfo->t>min+eps);
         assert(retInfo->t<max-eps);
-        retInfo->normal = glm::transpose(invM)*(retInfo->normal);
         retInfo->mat = static_cast<PhongMaterial*>(node.m_material);
+        retInfo->normal = glm::transpose(node.get_inverse()) * retInfo->normal;
+        retInfo->hitPoint = glm::transpose(node.get_inverse()) * retInfo->hitPoint;
     }
     return retInfo;
 }
@@ -118,29 +90,17 @@ std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::v
     std::shared_ptr<IntersecInfo> retInfo = NULL;
     std::shared_ptr<IntersecInfo> tmpInfo = NULL;
     
+    glm::mat4 w2m_inv = root->get_inverse();
+    
+    // TODO: make this clear
+    eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0));
+    pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0));
+    
     if(root->m_nodeType == NodeType::GeometryNode){
         GeometryNode* gnodep = static_cast<GeometryNode*>(root);
-        tmpInfo = hit(eye, pixel, *gnodep, invM, min, max);
-        if(tmpInfo != NULL) {
-            if(retInfo == NULL){
-                retInfo = tmpInfo;
-            } else {
-                if(retInfo->t > tmpInfo->t){
-                    retInfo = tmpInfo;
-                }
-            }
-        }
+        return hit(eye, pixel, *gnodep, invM, min, max);
     } else {
         // Scene or Joint nodes
-        glm::mat4 w2m_inv = root->get_inverse();
-        
-        // TODO: make this clear
-        invM = w2m_inv * invM;
-        //invM = invM * w2m_inv;
-        
-        eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0f));
-        pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0f));
-        
         for(SceneNode* child : root->children){
             tmpInfo = hitWrapper(child, eye, pixel, mat, t, hitNormal, invM, min, max);
             if(tmpInfo != NULL) {
@@ -155,29 +115,32 @@ std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::v
         }
     }
     
-    
+    if(retInfo != NULL){
+        retInfo->normal = glm::transpose(root->get_inverse()) * retInfo->normal;
+        retInfo->hitPoint = glm::transpose(root->get_inverse()) * retInfo->hitPoint;
+    }
     return retInfo;
 }
 
 // direct light function for diffused object
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc) {
-    glm::vec3 col = glm::vec3(0.0f);
+    glm::vec3 col = glm::vec3(0.0);
     // TODO: consider light falloff based on distance
     //double r = glm::dot(lp - hitPoint, lp - hitPoint);
     glm::vec3 L = glm::normalize((lp - hitPoint));
     
     hitNormal = glm::normalize(hitNormal);
-    col = mkd * std::max(glm::dot(L, hitNormal), 0.0f) * lc;
+    col = mkd * std::max((double)glm::dot(L, hitNormal), 0.0) * lc;
     return col;
 }
 
 // indirect light for specular
 glm::vec3 indirectLight(glm::vec3 mks, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc, glm::vec3 eye, double shininess){
-    glm::vec3 col = glm::vec3(0.0f);
+    glm::vec3 col = glm::vec3(0.0);
     glm::vec3 V = glm::normalize(eye - hitPoint);
     glm::vec3 R = glm::normalize(glm::reflect(- lp + hitPoint, hitNormal));
     
-    col = mks * pow(std::max(glm::dot(V, R), 0.0f), shininess) * lc;
+    col = mks * pow(std::max((double)glm::dot(V, R), 0.0), shininess) * lc;
     return col;
 }
 
@@ -211,7 +174,7 @@ void A4_Render(
     // Fill in raytracing code here...
     // Assume one pixel is one unit of length
     double d = h/(2*tan(glm::radians(fovy/2)));
-    double fovx = 2.0 * glm::atan((double)w/2, d);
+    //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
 
     for (int y = 0; y<h; ++y) {
@@ -227,10 +190,6 @@ void A4_Render(
             
             // TODO: change signature of rayColor from pointOnImage to primaryRay
             glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*glm::normalize(left);
-            
-            //glm::vec3 pointOnImage = glm::vec3(eye.x - w/2 + x, eye.y + h/2 - y, eye.z - d);
-            //glm::vec3 pointOnImage = eye + glm::normalize(primaryRay);
-            //glm::vec4 primaryRay = glm::vec4(pointOnImage - eye, 0.0f);
             
             int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {

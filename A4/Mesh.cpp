@@ -52,15 +52,15 @@ bool Mesh::hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 prima
     
     T = primaryPoint - v1;
     u = glm::dot(T, P) * inv_det;
-    if(u < eps || u > 1+eps) return false;
+    if(u < -eps || u > 1+eps) return false;
     
     Q = glm::cross(T, e1);
     v = glm::dot(primaryRay, Q) * inv_det;
-    if(v<eps || u+v > 1+eps) return false;
+    if(v<-eps || u+v > 1+eps) return false;
     
     t = glm::dot(e2, Q)*inv_det;
     
-    if((t > min+eps) && (t < max-eps)){
+    if((t >= min+eps) && (t <= max-eps)){
         n = glm::cross(e1, e2);
         if(glm::dot(n, primaryRay) > 0-eps){
             n = -n;
@@ -98,7 +98,7 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
     }
     
     if (mBool) {
-        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(normalTriangle, 0.0f), primaryPoint + (float)tMesh * primaryRay, true, tMesh));
+        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(normalTriangle, 0.0), primaryPoint + (float)tMesh * primaryRay, true, tMesh));
     }
     return NULL;
 #endif

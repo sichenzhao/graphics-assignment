@@ -6,11 +6,10 @@
 #include "PhongMaterial.hpp"
 //#define BV
 
-static const float inff = std::numeric_limits<float>::infinity();
+//static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
 
-//static const float eps = FLT_EPSILON;
-static const float eps = 0.00001;
+static const double eps = 0.00001;
 
 enum class PrimType {
     Primitive,
@@ -29,16 +28,6 @@ struct IntersecInfo{
     bool isIntersect;
     float t;
     
-    /**
-    IntersecInfo(bool isInter){
-        normal = glm::vec4(0.0f);
-        hitPoint = glm::vec4(0.0f);
-        mat = NULL;
-        t = -inff;
-        isIntersect = isInter;
-    }
-     **/
-    
     IntersecInfo(glm::vec4 norm, glm::vec4 hitP, bool isInter, float lt){
         normal = norm;
         hitPoint = hitP;
@@ -48,8 +37,6 @@ struct IntersecInfo{
     }
 
     ~IntersecInfo(){
-        //delete normal;
-        //delete hitPoint;
         // mat is shared, will be deleted as program finished
     }
 };
