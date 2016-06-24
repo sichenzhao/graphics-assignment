@@ -3,6 +3,8 @@
 
 #include "A4.hpp"
 
+#include <thread>
+
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
@@ -151,6 +153,58 @@ void printColor(int x, int y, int r, int g, int b) {
 #endif
 }
 
+void render(
+            const int ye,
+            const int xe,
+            const int ys,
+            const int xs,
+            const int h,
+            const int w,
+            glm::vec3 eye,
+            glm::vec3 left,
+            glm::vec3 up,
+            glm::vec3 view,
+            double d,
+            
+            // What to render
+            SceneNode * root,
+            
+            // Image to write to, set to a given width and height
+            Image & image,
+            
+            // Lighting parameters
+            const std::list<Light *> & lights,
+            const glm::vec3 & ambient){
+    
+    for (int y = ys; y<ye; ++y) {
+        
+        for (int x = xs; x < xe; ++x) {
+#ifdef RELEASE
+            // clear screen
+            //std::cout << "\033[2J";
+            
+            // print percentage on (1,1)
+            //std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
+#endif
+            
+            // TODO: change signature of rayColor from pointOnImage to primaryRay
+            glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*glm::normalize(left);
+            
+            int lightNum = (int)lights.size();
+            for (auto it = lights.begin(); it != lights.end(); it++) {
+                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient);
+                //printColor(x, y, col.x, col.y, col.z);
+                image(x,y,0) += col.x;
+                image(x,y,1) += col.y;
+                image(x,y,2) += col.z;
+            }
+            image(x,y,0) = std::max(0.0, std::min(1.0, image(x,y,0)));
+            image(x,y,1) = std::max(0.0, std::min(1.0, image(x,y,1)));
+            image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
+        }
+    }
+}
+
 void A4_Render(
                // What to render
                SceneNode * root,
@@ -177,37 +231,22 @@ void A4_Render(
     double d = h/(2*tan(glm::radians(fovy/2)));
     //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
-
-    for (int y = 0; y<h; ++y) {
-        
-        for (int x = 0; x < w; ++x) {
-            #ifdef RELEASE
-            // clear screen
-            std::cout << "\033[2J";
-            
-            // print percentage on (1,1)
-            std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
-            #endif
-            
-            // TODO: change signature of rayColor from pointOnImage to primaryRay
-            glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*glm::normalize(left);
-            
-            int lightNum = (int)lights.size();
-            for (auto it = lights.begin(); it != lights.end(); it++) {
-                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient);
-                //printColor(x, y, col.x, col.y, col.z);
-                image(x,y,0) += col.x;
-                image(x,y,1) += col.y;
-                image(x,y,2) += col.z;
-            }
-            image(x,y,0) = std::max(0.0, std::min(1.0, image(x,y,0)));
-            image(x,y,1) = std::max(0.0, std::min(1.0, image(x,y,1)));
-            image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
-        }
+    
+#define threadNum 10
+    std::thread* threads[threadNum];
+    
+    for(int i=0; i<threadNum; i++){
+        threads[i] = new std::thread(render, h*(i+1)/threadNum, w, i*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
     }
     
+    for (int i=0; i<threadNum; i++) {
+        threads[i]->join();
+    }
+
+
+    
 #ifdef RELEASE
-    std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
+    //std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
 #endif
     std::cout << "Calling A4_Render(\n" <<
 		  "\t" << *root <<

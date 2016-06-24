@@ -28,6 +28,28 @@ void A4_Render(
 		const std::list<Light *> & lights
 );
 
+void render(const int ye,
+            const int xe,
+            const int ys,
+            const int xs,
+            const int h,
+            const int w,
+            glm::vec3 eye,
+            glm::vec3 left,
+            glm::vec3 up,
+            glm::vec3 view,
+            double d,
+            
+            // What to render
+            SceneNode * root,
+            
+            // Image to write to, set to a given width and height
+            Image & image,
+            
+            // Lighting parameters
+            const std::list<Light *> & lights,
+            const glm::vec3 & ambient);
+
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 p, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient);
 
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc);
