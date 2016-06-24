@@ -16,7 +16,6 @@ void dout(std::string msg){
 void dout(std::string msg){}
 #endif
 
-// TODO: pass object pointers instead of all real values or reference to speed up
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient){
     glm::vec3 col = glm::vec3(0.0);
     glm::vec3 hitNormal = glm::vec3(0.0);
@@ -49,12 +48,16 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         }
         
         if (!isShadow) {
+            // calculate light falloff effects
+            double r = glm::length(light.position - glm::vec3(hitInfo->hitPoint));
+            double falloff = 1/(light.falloff[0] + light.falloff[1]*r + light.falloff[2]*r*r);
+            
             // diffuse
             // direct light
-            col += directLight(hitInfo->mat->m_kd, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour);
+            col += directLight(hitInfo->mat->m_kd, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
-            col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour, eye, hitInfo->mat->m_shininess);
+            col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
             return col;
         }
     }
@@ -69,7 +72,7 @@ std::shared_ptr<IntersecInfo> hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode n
     
     std::shared_ptr<IntersecInfo> retInfo = NULL;
     
-    // TODO: just call the same virtual function
+    // just call the same virtual function
     retInfo = node.m_primitive->intersect(eye4, ray, min, max);
     
     if(retInfo!=NULL){
@@ -80,7 +83,7 @@ std::shared_ptr<IntersecInfo> hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode n
         assert(retInfo->t<max-eps);
         retInfo->mat = static_cast<PhongMaterial*>(node.m_material);
         retInfo->normal = glm::transpose(node.get_inverse()) * retInfo->normal;
-        retInfo->hitPoint = glm::transpose(node.get_inverse()) * retInfo->hitPoint;
+        retInfo->hitPoint = node.get_transform() * retInfo->hitPoint;
     }
     return retInfo;
 }
@@ -92,7 +95,6 @@ std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::v
     
     glm::mat4 w2m_inv = root->get_inverse();
     
-    // TODO: make this clear
     eye = glm::vec3(w2m_inv * glm::vec4(eye, 1.0));
     pixel = glm::vec3(w2m_inv * glm::vec4(pixel, 1.0));
     
@@ -116,8 +118,9 @@ std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::v
     }
     
     if(retInfo != NULL){
+        // https://goo.gl/2P84tL link to why use tranpose(inverse) here
         retInfo->normal = glm::transpose(root->get_inverse()) * retInfo->normal;
-        retInfo->hitPoint = glm::transpose(root->get_inverse()) * retInfo->hitPoint;
+        retInfo->hitPoint = root->get_transform() * retInfo->hitPoint;
     }
     return retInfo;
 }
@@ -125,8 +128,6 @@ std::shared_ptr<IntersecInfo>  hitWrapper(SceneNode* root, glm::vec3 eye, glm::v
 // direct light function for diffused object
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc) {
     glm::vec3 col = glm::vec3(0.0);
-    // TODO: consider light falloff based on distance
-    //double r = glm::dot(lp - hitPoint, lp - hitPoint);
     glm::vec3 L = glm::normalize((lp - hitPoint));
     
     hitNormal = glm::normalize(hitNormal);

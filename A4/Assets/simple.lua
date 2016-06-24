@@ -3,7 +3,7 @@
 mat1 = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25)
 mat2 = gr.material({0.5, 0.5, 0.5}, {0.5, 0.7, 0.5}, 25)
 mat3 = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25)
-grass = gr.material({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 0)
+grass = gr.material({1, 1, 1}, {0.0, 0.0, 0.0}, 0)
 
 scene_root = gr.node('root')
 scene_root:translate(0,0,-1000)
@@ -19,7 +19,7 @@ s2:set_material(mat1)
 s2:translate(0,0,1000)
 
 s3 = gr.nh_sphere('s3', {0, -1200, -500}, 1000)
---scene_root:add_child(s3)
+scene_root:add_child(s3)
 s3:set_material(mat2)
 s3:translate(0,0,1000)
 
