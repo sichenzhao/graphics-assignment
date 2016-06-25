@@ -8,8 +8,8 @@ Primitive::~Primitive()
 {
 }
 
-// TODO: Shouldn't support default Ctor
-//BoundingVolume::BoundingVolume(){}
+// Need to support default Ctor for mesh
+BoundingVolume::BoundingVolume(){}
 
 BoundingVolume::BoundingVolume(std::vector<glm::vec3> m_vertices){
     xmin = ymin = zmin = +std::numeric_limits<float>::infinity();
@@ -38,38 +38,40 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     double tmin, tmax, txmin, txmax, tymin, tymax, tzmin, tzmax;
     
     if (ray.x >= 0) {
-        txmin = tmin = (b0.x - p.x) / ray.x;
-        txmax = tmax = (b1.x - p.x) / ray.x;
+        txmin = tmin = (b0.x - p.x) / (ray.x + eps);
+        txmax = tmax = (b1.x - p.x) / (ray.x + eps);
     } else {
         txmin = tmin = (b1.x - p.x) / ray.x;
         txmax = tmax = (b0.x - p.x) / ray.x;
     }
+    //assert(tmin <= tmax);
     
     if (ray.y >= 0) {
-        tymin = (b0.y - p.y) / ray.y;
-        tymax = (b1.y - p.y) / ray.y;
+        tymin = (b0.y - p.y) / (ray.y + eps);
+        tymax = (b1.y - p.y) / (ray.y + eps);
     } else {
         tymin = (b1.y - p.y) / ray.y;
         tymax = (b0.y - p.y) / ray.y;
     }
     
-    if ( (tmin > tymax) || (tymin > tmax) )
+    if ( (tmin > tymax+eps) || (tymin-eps > tmax) )
         return NULL;
     
     if (tymin > tmin)
         tmin = tymin;
     if (tymax < tmax)
         tmax = tymax;
+    //assert(tmin <= tmax);
     
     if (ray.z >= 0) {
-        tzmin = (b0.z - p.z) / ray.z;
-        tzmax = (b1.z - p.z) / ray.z;
+        tzmin = (b0.z - p.z) / (ray.z + eps);
+        tzmax = (b1.z - p.z) / (ray.z + eps);
     } else {
         tzmin = (b1.z - p.z) / ray.z;
         tzmax = (b0.z - p.z) / ray.z;
     }
     
-    if ( (tmin > tzmax) || (tzmin > tmax) )
+    if ( (tmin > tzmax+eps) || (tzmin-eps > tmax) )
         return NULL;
     
     if (tzmin > tmin)
@@ -77,10 +79,28 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     if (tzmax < tmax)
         tmax = tzmax;
     
-    if((tmin >= min + eps) && (tmax < max - eps)) {
+    if(tmin > tmax){
+        double tmp = tmin;
+        tmin = tmax;
+        tmax = tmp;
+    }
+    
+    double realT;
+    if (tmin<min+eps) {
+        if (tmax<min+eps || tmax>=max - eps) {
+            return NULL;
+        }
+        realT = tmax;
+    } else if(tmin>=max - eps){
+        return NULL;
+    } else {
+        realT = tmin;
+    }
+    
+    //if((tmin >= min + eps) && (tmax < max - eps)) {
         assert(tmin <= tmax);
         // hits nh_cube
-        lt = std::min(lt, tmin);
+        lt = std::min(lt, realT);
         
         if(lt > txmin - eps && lt < txmin + eps) normal = glm::vec3(1,0,0);
         if (lt > txmax - eps && lt < txmax + eps) normal = glm::vec3(-1, 0, 0);
@@ -89,8 +109,8 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
         if (lt > tzmin - eps && lt < tzmin + eps) normal = glm::vec3(0, 0, 1);
         if (lt > tzmax - eps && lt < tzmax + eps) normal = glm::vec3(0, 0, -1);
         return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt));
-    }
-    return NULL;
+    //}
+    //return NULL;
 }
 
 BoundingVolume::~BoundingVolume()

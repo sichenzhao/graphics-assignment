@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
-//#define BV
+#define BV
 
 //static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
@@ -53,7 +53,8 @@ class BoundingVolume : public Primitive {
 public:
     double xmin, xmax, ymin, ymax, zmin, zmax;
     
-    //BoundingVolume();
+    // Have to support default Ctor for mesh
+    BoundingVolume();
     
     std::shared_ptr<IntersecInfo> intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max);
     

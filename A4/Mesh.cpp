@@ -76,8 +76,17 @@ bool Mesh::hitTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 prima
 
 std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max){
 #ifdef BV
-    return bvb.intersect(primaryPoint, primaryRay, min, max);
-#else
+    std::shared_ptr<IntersecInfo> bvbInfo = bvb.intersect(primaryPoint, primaryRay, min, max);
+    
+    if (bvbInfo == NULL){
+        return NULL;
+    }
+    //else {
+    //    return bvbInfo;
+    //}
+#endif
+    
+
     bool mBool = false;
     double tMesh = infd;
     double lt = infd;
@@ -101,7 +110,6 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
         return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(normalTriangle, 0.0), primaryPoint + (float)tMesh * primaryRay, true, tMesh));
     }
     return NULL;
-#endif
 }
 
 std::ostream& operator<<(std::ostream& out, const Mesh& mesh)
