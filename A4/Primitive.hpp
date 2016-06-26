@@ -18,7 +18,8 @@ enum class PrimType {
     NonhierSphere,
     NonhierBox,
     Mesh,
-    BoundingVolume
+    BoundingVolume,
+    Triangle
 };
 
 struct IntersecInfo{
