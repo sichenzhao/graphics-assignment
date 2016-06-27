@@ -6,6 +6,8 @@
 // #include "cs488-framework/ObjFileDecoder.hpp"
 #include "Mesh.hpp"
 
+using namespace std;
+
 Mesh::Mesh( const std::string& fname )
 	: m_vertices()
 	, m_faces()
@@ -22,6 +24,9 @@ Mesh::Mesh( const std::string& fname )
 			m_vertices.push_back( glm::vec3( vx, vy, vz ) );
 		} else if( code == "f" ) {
 			ifs >> s1 >> s2 >> s3;
+            // First time go through all faces
+            // TODO: should be able to calculate bounding coordinates of each triangle
+            //       Then the grid will take the list of faces with bounding coordinates and put them into the cells
 			m_faces.push_back( Triangle( s1 - 1, s2 - 1, s3 - 1) );
 		}
 	}
@@ -72,12 +77,12 @@ std::shared_ptr<IntersecInfo> Triangle::intersect(glm::vec4 p, glm::vec4 ray, co
     
     t = glm::dot(e2, Q)*inv_det;
     
-    if((t >= min+eps) && (t <= max-eps)){
+    if((t > min+eps) && (t <= max-eps)){
         n = glm::cross(e1, e2);
         if(glm::dot(n, primaryRay) > 0-eps){
             n = -n;
         }
-        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(n, 0.0), p+(t*ray), true, t));
+        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(n, 0.0), p+((t-eps)*ray), true, t));
     }
     return NULL;
 }

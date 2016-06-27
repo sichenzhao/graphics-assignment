@@ -50,7 +50,7 @@ void render(const int ye,
             const std::list<Light *> & lights,
             const glm::vec3 & ambient);
 
-glm::vec3 rayColor(glm::vec3 eye, glm::vec3 p, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient);
+glm::vec3 rayColor(glm::vec3 eye, glm::vec3 p, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce = 1);
 
 glm::vec3 directLight(glm::vec3 mkd, glm::vec3 hitPoint, glm::vec3 hitNormal, glm::vec3 lp, glm::vec3 lc);
 

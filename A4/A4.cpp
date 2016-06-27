@@ -18,7 +18,10 @@ void dout(std::string msg){
 void dout(std::string msg){}
 #endif
 
-glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient){
+glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce){
+    if (maxBounce<=0) {
+        return glm::vec3(0.0);
+    }
     glm::vec3 col = glm::vec3(0.0);
     glm::vec3 hitNormal = glm::vec3(0.0);
     double t = infd;
@@ -59,9 +62,23 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             col += directLight(hitInfo->mat->m_kd, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
-            col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
-            return col;
+            //col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
         }
+        
+        // recursive mirror specular
+        // Since mirror reflection, shininess is not working for V and R are the same
+        
+        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::vec3(hitInfo->normal)), light, lightNum, root, ambient, maxBounce-1);
+        
+        if(reflectedColor!= glm::vec3(0.0)){
+            dout("normal is " + glm::to_string(hitInfo->normal));
+            dout(glm::to_string(reflectedColor));
+        }
+        
+        if (hitInfo->mat->m_ks != glm::vec3(0.0)) {
+            dout("normal is " + glm::to_string(hitInfo->normal));
+        }
+        col += reflectedColor;
     }
     return col;
 }
@@ -192,7 +209,7 @@ void render(
             
             int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {
-                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient);
+                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, 5);
                 //printColor(x, y, col.x, col.y, col.z);
                 image(x,y,0) += col.x;
                 image(x,y,1) += col.y;
@@ -232,7 +249,7 @@ void A4_Render(
     //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
     
-#define threadNum 10
+#define threadNum 1
     std::thread* threads[threadNum];
     
     for(int i=0; i<threadNum; i++){
