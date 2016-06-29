@@ -8,17 +8,25 @@
 #include "GeometryNode.hpp"
 #include "Mesh.hpp"
 
-//#define DEBUG_Z
+static bool showDebug = false;
+
+#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
-    std::cout << msg << std::endl;
+    if(showDebug){
+        std::cout << msg << std::endl;
+    }
 }
 #else
 #define RELEASE
 void dout(std::string msg){}
 #endif
 
+#define MAX_BOUNCE 5
+
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce){
+    dout("==============ray start=================");
+    dout("maxbounce is " + std::to_string(maxBounce));
     if (maxBounce<=0) {
         return glm::vec3(0.0);
     }
@@ -30,6 +38,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
     
     if(hitInfo == NULL){
         // return background
+        dout("==============ray end=================");
         return col;
     } else {
         // hit
@@ -68,18 +77,25 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         // recursive mirror specular
         // Since mirror reflection, shininess is not working for V and R are the same
         
-        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::vec3(hitInfo->normal)), light, lightNum, root, ambient, maxBounce-1);
-        
-        if(reflectedColor!= glm::vec3(0.0)){
-            dout("normal is " + glm::to_string(hitInfo->normal));
-            dout(glm::to_string(reflectedColor));
+        if (hitInfo->mat->m_ks == glm::vec3(0.9)) {
+            dout("mirror normal " + glm::to_string(glm::normalize(glm::vec3(hitInfo->normal))));
+            dout("mirror hit point " + glm::to_string(hitInfo->hitPoint));
+            dout("primary ray " + glm::to_string(glm::vec3(hitInfo->hitPoint) - eye));
+            dout("reflected ray " + glm::to_string(glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::normalize(glm::vec3(hitInfo->normal)))));
+            dout("Gonna recursively call rayColor");
         }
         
-        if (hitInfo->mat->m_ks != glm::vec3(0.0)) {
-            dout("normal is " + glm::to_string(hitInfo->normal));
+        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::normalize(glm::vec3(hitInfo->normal))) + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+        
+        if (reflectedColor==glm::vec3(0.0)){
+            dout("returned black");
+        } else {
+            dout(glm::to_string(reflectedColor) + "!!!!!!!");
         }
+        
         col += reflectedColor;
     }
+    dout("==============ray end=================");
     return col;
 }
 
@@ -196,6 +212,7 @@ void render(
     for (int y = ys; y<ye; ++y) {
         
         for (int x = xs; x < xe; ++x) {
+            showDebug = ((x==w/2) && (y==h/2));
 #ifdef RELEASE
             // clear screen
             //std::cout << "\033[2J";
@@ -209,7 +226,7 @@ void render(
             
             int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {
-                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, 5);
+                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
                 //printColor(x, y, col.x, col.y, col.z);
                 image(x,y,0) += col.x;
                 image(x,y,1) += col.y;
