@@ -128,6 +128,7 @@
 		0CC118E01BB997F000C87A4F /* VertexShader.vs in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0CC118CB1BB9976F00C87A4F /* VertexShader.vs */; };
 		0CC118E21BB998CA00C87A4F /* Main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CC118D41BB9976F00C87A4F /* Main.cpp */; };
 		0CC118E51BB9999000C87A4F /* IndexExample.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CC118E31BB9999000C87A4F /* IndexExample.cpp */; };
+		CD4D66421D1F06C9002AB11C /* Grid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CD4D66401D1F06C9002AB11C /* Grid.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -441,6 +442,8 @@
 		0CFA619F1BA8C8E50041C6E5 /* Main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
 		0CFA61A01BA8C8E50041C6E5 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		0CFA61A11BA8C8E50041C6E5 /* premake4.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = premake4.lua; sourceTree = "<group>"; };
+		CD4D66401D1F06C9002AB11C /* Grid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Grid.cpp; sourceTree = "<group>"; };
+		CD4D66411D1F06C9002AB11C /* Grid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Grid.h; sourceTree = "<group>"; };
 		CDC9B6AF1D18343D00BF0324 /* sample.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = sample.lua; sourceTree = "<group>"; };
 		EF66900674193A7C9A818BE1 /* lcorolib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lcorolib.c; sourceTree = "<group>"; };
 		EF669008CE107BFB53DEAD20 /* lopcodes.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = lopcodes.o; sourceTree = "<group>"; };
@@ -704,6 +707,8 @@
 				0C021B261BDEF0F900B28537 /* scene_lua.hpp */,
 				0C021B271BDEF0F900B28537 /* SceneNode.cpp */,
 				0C021B281BDEF0F900B28537 /* SceneNode.hpp */,
+				CD4D66401D1F06C9002AB11C /* Grid.cpp */,
+				CD4D66411D1F06C9002AB11C /* Grid.h */,
 			);
 			path = A4;
 			sourceTree = "<group>";
@@ -1496,6 +1501,7 @@
 				0C021B5A1BDEF26A00B28537 /* Main.cpp in Sources */,
 				0C021B5B1BDEF26A00B28537 /* Material.cpp in Sources */,
 				0C021B5C1BDEF26A00B28537 /* Mesh.cpp in Sources */,
+				CD4D66421D1F06C9002AB11C /* Grid.cpp in Sources */,
 				0C021B5D1BDEF26A00B28537 /* PhongMaterial.cpp in Sources */,
 				0C021B5E1BDEF26A00B28537 /* polyroots.cpp in Sources */,
 				0C021B5F1BDEF26A00B28537 /* Primitive.cpp in Sources */,

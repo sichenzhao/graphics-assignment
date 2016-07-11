@@ -1,71 +1,25 @@
--- test for hierarchical ray-tracers.
--- Thomas Pflaum 1996
+-- A simple scene with some miscellaneous geometry.
 
-gold = gr.material({0.9, 0.8, 0.4}, {0.8, 0.8, 0.4}, 25)
-grass = gr.material({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 0)
-blue = gr.material({0.7, 0.6, 1}, {0.5, 0.4, 0.8}, 25)
-mat3 = gr.material({1.0, 0.1, 0.1}, {0.5, 0.7, 0.5}, 25)
-hide = gr.material({0.84, 0.6, 0.53}, {0.3, 0.3, 0.3}, 20)
+mat1 = gr.material({0.7, 1.0, 0.7}, {0.5, 0.7, 0.5}, 25)
+mat2 = gr.material({0.5, 0.5, 0.5}, {0.5, 0.7, 0.5}, 25)
+mat3 = gr.material({1.0, 0.6, 0.1}, {0.5, 0.7, 0.5}, 25)
+mat4 = gr.material({0.7, 0.6, 1.0}, {0.5, 0.4, 0.8}, 25)
+grass = gr.material({1, 1, 1}, {0.0, 0.0, 0.0}, 0)
 
-scene = gr.node('scene')
-scene:rotate('X', 23)
-scene:translate(6, -2, -15)
+scene_root = gr.node('root')
+scene_root:translate(0,0,-1000)
 
--- the arc
-arc = gr.node('arc')
-scene:add_child(arc)
-arc:translate(0,0,-10)
-arc:rotate('Y', 60)
-p1 = gr.cube('p1')
-arc:add_child(p1)
-p1:set_material(gold)
-p1:scale(0.8, 4, 0.8)
-p1:translate(-2.4, 0, -0.4)
+-- A small stellated dodecahedron.
 
-p2 = gr.cube('p2')
-arc:add_child(p2)
-p2:set_material(gold)
-p2:scale(0.8, 4, 0.8)
-p2:translate(1.6, 0, -0.4)
-
-s = gr.sphere('s')
-arc:add_child(s)
-s:set_material(gold)
-s:scale(4, 0.6, 0.6)
-s:translate(0, 4, 0)
-
--- the floor
-plane = gr.mesh( 'plane', 'plane.obj' )
-scene:add_child(plane)
+plane = gr.mesh( 'plane', 'cow.obj' )
+scene_root:add_child(plane)
 plane:set_material(grass)
-plane:scale(30, 30, 30)
+plane:scale(1, 1, 1)
+plane:translate(0,0,1000)
 
--- sphere
-poly = gr.mesh( 'poly', 'dodeca.obj' )
-scene:add_child(poly)
-poly:translate(-2, 1.618034, 0)
-poly:set_material(blue)
+white_light = gr.light({-100.0, 150.0, 400.0}, {0.9, 0.9, 0.9}, {1, 0, 0})
+orange_light = gr.light({400.0, 100.0, 150.0}, {0.7, 0.0, 0.7}, {1, 0, 0})
 
--- The lights
-l1 = gr.light({200,200,400}, {0.8, 0.8, 0.8}, {1, 0, 0})
-l2 = gr.light({0, 5, -20}, {0.4, 0.4, 0.8}, {1, 0, 0})
-
-steldodec = gr.mesh( 'dodec', 'cylinder.obj' )
-steldodec:set_material(mat3)
-scene:add_child(steldodec)
-steldodec:translate(-2, 0, 1)
-
-cow_poly = gr.mesh('cow', 'dodecahedron.obj')
-factor = 2.0/(2.76+3.637)
-
-cow_poly:set_material(hide)
-
-cow_poly:translate(0.0, 3.637, 0.0)
-cow_poly:scale(factor, factor, factor)
-cow_poly:translate(0.0, -1.0, 0.0)
-
-scene:add_child(cow_poly)
-
-gr.render(scene, 'sample.png', 500, 500, 
-	  {0, 0, 0,}, {0, 0, -1}, {0, 1, 0}, 50,
-	  {0.4, 0.4, 0.4}, {l1, l2})
+gr.render(scene_root, 'sample.png', 256, 256,
+	  {0, 0, 8}, {0, 0, -1}, {0, 1, 0}, 50,
+	  {0.3, 0.3, 0.3}, {white_light, orange_light})

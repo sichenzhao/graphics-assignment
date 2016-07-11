@@ -10,7 +10,7 @@
 
 static bool showDebug = false;
 
-#define DEBUG_Z
+//#define DEBUG_Z
 #ifdef DEBUG_Z
 void dout(std::string msg){
     if(showDebug){
@@ -27,7 +27,7 @@ void dout(std::string msg){}
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce){
     dout("==============ray start=================");
     dout("maxbounce is " + std::to_string(maxBounce));
-    if (maxBounce<=0) {
+    if (maxBounce<=0 || isnan(pixelPoint.x)) {
         return glm::vec3(0.0);
     }
     glm::vec3 col = glm::vec3(0.0);
@@ -51,7 +51,6 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         // determine shadow
         bool isShadow = false;
         
-        // TODO: do specular recursively, do light rendering like it is real
         // shadow of others
         {
             PhongMaterial* tmp = NULL;
@@ -71,7 +70,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             col += directLight(hitInfo->mat->m_kd, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
-            //col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
+            col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
         }
         
         // recursive mirror specular
@@ -85,7 +84,16 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             dout("Gonna recursively call rayColor");
         }
         
-        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::normalize(glm::vec3(hitInfo->normal))) + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+        glm::vec3 r_primaryRay = glm::normalize(glm::vec3(hitInfo->hitPoint) - eye);
+        glm::vec3 r_normalVec = glm::normalize(glm::vec3(hitInfo->normal));
+        
+        glm::vec3 reflectedRay = glm::reflect(r_primaryRay, r_normalVec);
+        
+#ifdef MR
+        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), reflectedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+#else
+        glm::vec3 reflectedColor = glm::vec3(0.0);
+#endif
         
         if (reflectedColor==glm::vec3(0.0)){
             dout("returned black");

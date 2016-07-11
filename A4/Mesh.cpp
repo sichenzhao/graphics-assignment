@@ -37,60 +37,14 @@ Mesh::Mesh( const std::string& fname )
 
 #ifdef BV
     bvb = BoundingVolume(m_vertices);
+    grid = Grid(&bvb, &m_faces);
 #endif
 }
 
-std::shared_ptr<IntersecInfo> Triangle::intersect(glm::vec4 p, glm::vec4 ray, const double min, const double max){
-    // Möller-Trumbore algorithm
-    glm::vec3 n;
-    
-    glm::vec3 e1, e2; // Edge1, Edge2
-    glm::vec3 P, Q, T;
-    double det, inv_det, u, v;
-    double t;
-    
-    glm::vec3 v1, v2, v3;
-    v1 = (*m_vertices)[iv1];
-    v2 = (*m_vertices)[iv2];
-    v3 = (*m_vertices)[iv3];
-    
-    glm::vec3 primaryPoint = glm::vec3(p);
-    glm::vec3 primaryRay = glm::vec3(ray);
-    
-    e1 = v2 - v1;
-    e2 = v3 - v1;
-    
-    // see if primaryRay parallel to plane of triangle
-    P = glm::cross(primaryRay, e2);
-    det = glm::dot(e1, P);
-    if(det > -eps && det < eps) return NULL;
-    inv_det = 1 / det;
-    
-    
-    T = primaryPoint - v1;
-    u = glm::dot(T, P) * inv_det;
-    if(u < -eps || u > 1+eps) return NULL;
-    
-    Q = glm::cross(T, e1);
-    v = glm::dot(primaryRay, Q) * inv_det;
-    if(v<-eps || u+v > 1+eps) return NULL;
-    
-    t = glm::dot(e2, Q)*inv_det;
-    
-    if((t > min+eps) && (t <= max-eps)){
-        n = glm::cross(e1, e2);
-        if(glm::dot(n, primaryRay) > 0-eps){
-            n = -n;
-        }
-        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(n, 0.0), p+((t-eps)*ray), true, t));
-    }
-    return NULL;
-}
-
-
 std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max){
 #ifdef BV
-    std::shared_ptr<IntersecInfo> bvbInfo = bvb.intersect(primaryPoint, primaryRay, min, max);
+    double anotherT;
+    std::shared_ptr<IntersecInfo> bvbInfo = bvb.intersect(primaryPoint, primaryRay, min, max, &anotherT);
     
     if (bvbInfo == NULL){
         return NULL;
@@ -98,6 +52,8 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
     //else {
     //    return bvbInfo;
     //}
+    
+    return grid.intersect(primaryPoint, primaryRay, bvbInfo->t, anotherT, min, max);
 #endif
     
     bool mBool = false;
