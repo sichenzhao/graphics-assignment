@@ -67,8 +67,11 @@
 */
 
 /* Imports */
+#include "Primitive.hpp"
 #include "polyroots.hpp"
 #include <math.h>
+
+using namespace std;
 
 /* Forward declarations */
 double sink_lookup(double), cosk_lookup(double);
@@ -107,8 +110,8 @@ size_t quadraticRoots( double A, double B, double C, double roots[2] )
 	double D;
 	double q;
 
-	if( A == 0 ) {
-		if( B == 0 ) {
+	if( abs(A) <= eps ) {
+		if( abs(B) <= eps ) {
 			return 0;
 		} else {	
 			roots[0] = -C/B;
@@ -117,7 +120,7 @@ size_t quadraticRoots( double A, double B, double C, double roots[2] )
 	} else {
 		/*  Compute the discrimanant D=b^2 - 4ac */
 		D = B*B - 4*A*C;
-		if( D < 0 ) {
+		if( D < eps ) {
 			return 0;
 		} else {
 			/* Two real roots */

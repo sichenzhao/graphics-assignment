@@ -1,4 +1,5 @@
 #include "Primitive.hpp"
+#include "polyroots.hpp"
 
 #include <iostream>
 
@@ -11,6 +12,16 @@ Primitive::Primitive():m_type(PrimType::Primitive)
 Primitive::~Primitive()
 {
 }
+
+Ellipsoid::Ellipsoid(double a, double b, double c)
+: a(a), b(b), c(c)
+{}
+
+std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 p, glm::vec4 ray, const double min, const double max) {
+    return NULL;
+}
+
+Ellipsoid::~Ellipsoid(){};
 
 // Need to support default Ctor for mesh
 BoundingVolume::BoundingVolume(){}
@@ -167,7 +178,6 @@ NonhierSphere::NonhierSphere(const glm::vec3& pos, double radius)
 
 std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ray, const double min, const double max){
     double lt = infd;
-    bool nhsBool = false;
     
     glm::vec4 center = glm::vec4(m_pos, 1.0);
     glm::vec4 hitNormal = glm::vec4(0.0);
@@ -177,6 +187,26 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     B = 2*B;
     float C = dot(p - center, p - center) - pow(m_radius, 2);
     
+    double roots[2];
+    size_t rootsNum = quadraticRoots(A, B, C, roots);
+    
+    if (rootsNum == 0) {
+        return NULL;
+    } else if (rootsNum == 1) {
+        lt = roots[0];
+    } else {
+        lt = std::min(roots[0], roots[1]);
+        if(lt <= min + eps){
+            lt = std::max(roots[0], roots[1]);
+        }
+    }
+    
+    if(lt >= min + eps && lt < max - eps){
+        hitNormal = (p + (ray)*(float)lt - center);
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, p+(float)lt*ray, true, lt));
+    }
+    return NULL;
+    /**
     float determ = pow(B, 2) - 4*A*C;
     
     if(determ < 0 - eps){
@@ -200,6 +230,7 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
         }
     }
     return NULL;
+     **/
 }
 
 NonhierSphere::~NonhierSphere()

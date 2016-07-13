@@ -12,12 +12,14 @@ static bool showDebug = false;
 
 //#define DEBUG_Z
 #ifdef DEBUG_Z
+#define threadNum 1
 void dout(std::string msg){
     if(showDebug){
         std::cout << msg << std::endl;
     }
 }
 #else
+#define threadNum 10
 #define RELEASE
 void dout(std::string msg){}
 #endif
@@ -274,8 +276,7 @@ void A4_Render(
     double d = h/(2*tan(glm::radians(fovy/2)));
     //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
-    
-#define threadNum 10
+
     std::thread* threads[threadNum];
     
     if(threadNum > 1){

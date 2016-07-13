@@ -24,7 +24,8 @@ enum class PrimType {
     NonhierBox,
     Mesh,
     BoundingVolume,
-    Triangle
+    Triangle,
+    Ellipsoid
 };
 
 struct IntersecInfo{
@@ -53,6 +54,17 @@ public:
     Primitive();
     virtual std::shared_ptr<IntersecInfo> intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max) = 0;
     virtual ~Primitive();
+};
+
+class Ellipsoid : public Primitive {
+public:
+    double a, b, c;
+    
+    Ellipsoid(double a, double b, double c);
+    
+    std::shared_ptr<IntersecInfo> intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max);
+    
+    virtual ~Ellipsoid();
 };
 
 class BoundingVolume : public Primitive {

@@ -124,7 +124,7 @@ void Grid::addObj(Triangle* triangle){
 }
 
 static void update_t(float &t, const float firstT, const float dt){
-    if(t==firstT) {
+    if(t<=firstT + eps && t>=firstT - eps) {
         t += dt;
         return;
     }
@@ -214,19 +214,19 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
         
         if (tx_next < ty_next && tx_next < tz_next) {
             // xmin
-            assert(ix<nx);
+            if(iz<0 || iz >= nz) break;
             tx_next += dtx;
             ix += (ray.x > 0)?1:-1;
             if(ix<0 || ix >= nx) break;
         } else if (ty_next < tz_next) {
             // ymin
-            assert(iy<ny);
+            if(iz<0 || iz >= nz) break;
             ty_next += dty;
             iy += (ray.y > 0)?1:-1;
             if(iy<0 || iy >= ny) break;
         } else {
             // zmin
-            assert(iz<nz);
+            if(iz<0 || iz >= nz) break;
             tz_next += dtz;
             iz += (ray.z > 0)?1:-1;
             if(iz<0 || iz >= nz) break;
