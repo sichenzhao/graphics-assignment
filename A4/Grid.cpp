@@ -28,19 +28,32 @@ void Grid::setupCells(){
     
     // determine grid numbers on each axis
     // nx, ny, nz
-    float wx = bvp->xmax - bvp->xmin;
-    float wy = bvp->ymax - bvp->ymin;
-    float wz = bvp->zmax - bvp->zmin;
-    //nx = ny = nz = 10;
-    nx = ny = nz = 3;
-    /**
+    float wx = abs(bvp->xmax - bvp->xmin);
+    float wy = abs(bvp->ymax - bvp->ymin);
+    float wz = abs(bvp->zmax - bvp->zmin);
+    
+    if (wx==0) {
+        wx += eps;
+    }
+    if (wy==0) {
+        wy += eps;
+    }
+    if (wz==0) {
+        wz += eps;
+    }
+    
+    if (m_facesp->size() > 1000 || wx * wy * wz==0) {
+        nx = ny = nz = 10;
+    } else {
      unsigned long num_objects = m_facesp->size();
      float multiplier = 2.0f;
      float s = pow(wx * wy * wz / num_objects, 0.3333333);
      nx = multiplier * wx / s + 1;
      ny = multiplier * wy / s + 1;
      nz = multiplier * wz / s + 1;
-     **/
+    }
+    
+    nx = ny = nz = 6;
     
     cx = wx / nx;
     cy = wy / ny;
@@ -110,16 +123,52 @@ void Grid::addObj(Triangle* triangle){
     }
 }
 
+static void update_t(float &t, const float firstT, const float dt){
+    if(t==firstT) {
+        t += dt;
+        return;
+    }
+    if (t < firstT) {
+        while (t <= firstT) {
+            t += dt;
+        }
+        return;
+    } else {
+        while (t > firstT) {
+            t -= dt;
+        }
+        t += dt;
+        if(t <= firstT + eps && dt > eps){
+            t += dt;
+        }
+        assert(t > firstT - eps && (t-firstT < dt + eps));
+        return;
+    }
+}
 
 std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const double firstT, const double secondT, const double min, const double max){
+    assert(secondT >= firstT - eps);
+    
     shared_ptr<IntersecInfo> retInfo = NULL;
     glm::vec3 normalTriangle;
     
+    if (ray.x == 0) {
+        ray.x += eps;
+    }
+    
+    if (ray.y == 0) {
+        ray.y += eps;
+    }
+    
+    if (ray.z == 0) {
+        ray.z += eps;
+    }
+    
     // every axis corresponding delta t
     float dtx, dty, dtz;
-    dtx = cx / ray.x;
-    dty = cy / ray.y;
-    dtz = cz / ray.z;
+    dtx = abs(cx / ray.x);
+    dty = abs(cy / ray.y);
+    dtz = abs(cz / ray.z);
     
     // find the start cell of ray bbox intersection
     glm::vec4 startP = p + ray * (float) firstT;
@@ -127,7 +176,6 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
     ix = (startP.x - bvp->xmin) / cx;
     iy = (startP.y - bvp->ymin) / cy;
     iz = (startP.z - bvp->zmin) / cz;
-    
     if (ix == nx) {
         ix--;
     }
@@ -140,21 +188,13 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
     
     // find the initial t for each coordinates
     float tx_next, ty_next, tz_next;
-    tx_next = (bvp->xmin - p.x) / ray.x;
-    ty_next = (bvp->ymin - p.y) / ray.y;
-    tz_next = (bvp->zmin - p.z) / ray.z;
-    while ((tx_next<firstT) || (ty_next<firstT) || (tz_next<firstT)) {
-        if (tx_next<firstT) {
-            tx_next += dtx;
-        }
-        if (ty_next<firstT) {
-            ty_next += dty;
-        }
-        if (tz_next<firstT){
-            tz_next += dtz;
-        }
-    }
-    
+    tx_next = (bvp->xmin + ix*dtx - p.x) / ray.x;
+    ty_next = (bvp->ymin + iy*dty - p.y) / ray.y;
+    tz_next = (bvp->zmin + iz*dtz - p.z) / ray.z;
+    update_t(tx_next, firstT, dtx);
+    update_t(ty_next, firstT, dty);
+    update_t(tz_next, firstT, dtz);
+
     while (true) {
         for (auto it=cells[ix + iy*nx + iz*ny*nx].begin(); it!=cells[ix + iy*nx + iz*ny*nx].end(); it++) {
             shared_ptr<IntersecInfo> tmpInfo = NULL;

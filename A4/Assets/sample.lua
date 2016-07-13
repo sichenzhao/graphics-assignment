@@ -11,10 +11,15 @@ scene_root:translate(0,0,-1000)
 
 -- A small stellated dodecahedron.
 
-plane = gr.mesh( 'plane', 'cow.obj' )
+plane = gr.mesh( 'plane', 'dodeca.obj' )
+--plane = gr.mesh( 'plane', 'smstdodeca.obj' )
 scene_root:add_child(plane)
 plane:set_material(grass)
-plane:scale(1, 1, 1)
+--plane:rotate('Z', 30)
+--plane:rotate('Y', 30)
+plane:rotate('X', 42)
+--plane:scale(1/100, 1/100, 1/100)
+--plane:scale(10, 10, 10)
 plane:translate(0,0,1000)
 
 white_light = gr.light({-100.0, 150.0, 400.0}, {0.9, 0.9, 0.9}, {1, 0, 0})

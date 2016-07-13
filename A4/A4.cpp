@@ -245,6 +245,7 @@ void render(
             image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
         }
     }
+    return;
 }
 
 void A4_Render(
@@ -274,19 +275,23 @@ void A4_Render(
     //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
     
-#define threadNum 1
+#define threadNum 10
     std::thread* threads[threadNum];
     
+    if(threadNum > 1){
     for(int i=0; i<threadNum; i++){
         threads[i] = new std::thread(render, h*(i+1)/threadNum, w, i*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
     }
     
     for (int i=0; i<threadNum; i++) {
-        threads[i]->join();
+        if (threads[i]->joinable()) {
+            threads[i]->join();
+        }
+    }
+    } else {
+        render(h*(0+1)/threadNum, w, 0*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
     }
 
-
-    
 #ifdef RELEASE
     //std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
 #endif
