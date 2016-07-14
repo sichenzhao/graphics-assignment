@@ -10,7 +10,7 @@
 
 static bool showDebug = false;
 
-//#define DEBUG_Z
+#define DEBUG_Z
 #ifdef DEBUG_Z
 #define threadNum 1
 void dout(std::string msg){

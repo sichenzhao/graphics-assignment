@@ -17,11 +17,103 @@ Ellipsoid::Ellipsoid(double a, double b, double c)
 : a(a), b(b), c(c)
 {}
 
-std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 p, glm::vec4 ray, const double min, const double max) {
+std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 eye, glm::vec4 ray, const double min, const double max) {
+    glm::vec3 p = glm::vec3(eye);
+    glm::vec3 q = glm::vec3(a, b, c);
+    glm::vec3 r = glm::vec3(ray);
+    double lt = infd;
+    glm::vec4 hitNormal = glm::vec4(0.0);
+    glm::vec4 hitPoint = glm::vec4(0.0);
+    
+    float A = glm::dot((r/q), (r/q));
+    float B = 2 * glm::dot(p/q, r/q);
+    float C = dot(p/q, p/q) - 1;
+    
+    double roots[2];
+    size_t rootsNum = quadraticRoots(A, B, C, roots);
+    
+    if (rootsNum == 0) {
+        return NULL;
+    } else if (rootsNum == 1) {
+        lt = roots[0];
+    } else {
+        lt = std::min(roots[0], roots[1]);
+        if(lt <= min + eps){
+            lt = std::max(roots[0], roots[1]);
+        }
+    }
+    
+    if(lt >= min + eps && lt < max - eps){
+        hitPoint = eye+(float)lt*ray;
+        
+        // get two points on plane, with hitPoint will get two vectors
+        glm::vec3 v1, v2;
+        v1 = glm::vec3(1,0,(1-hitPoint.x/a/a)*c*c/hitPoint.z) - glm::vec3(hitPoint);
+        v2 = glm::vec3(0,1,(1-hitPoint.y/b/b)*c*c/hitPoint.z) - glm::vec3(hitPoint);
+        hitNormal = glm::vec4(glm::cross(v1, v2), 0);
+        if (glm::dot(hitNormal, ray) > 0) {
+            hitNormal = -hitNormal;
+        }
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt));
+    }
     return NULL;
 }
 
 Ellipsoid::~Ellipsoid(){};
+
+EllipticCone::EllipticCone(double a, double b, double c, double height)
+: p(a), q(b), r(c), height(height)
+{}
+
+std::shared_ptr<IntersecInfo> EllipticCone::intersect(glm::vec4 eye, glm::vec4 ray, const double min, const double max) {
+    if (std::abs(height) <= eps) {
+        return NULL;
+    }
+    const double hCons1 = (height - eye.z)/ray.z;
+    const double hCons2 = (-height-eye.z)/ray.z;
+    const double heightMin = std::min(hCons1, hCons2);
+    const double heightMax = std::max(hCons1, hCons2);
+    
+    const double appMin = std::max(min, heightMin);
+    const double appMax = std::min(max, heightMax);
+    
+    glm::vec3 h = glm::vec3(p*p, q*q, -r*r);
+    glm::vec3 e = glm::vec3(eye);
+    glm::vec3 R = glm::vec3(ray);
+    double lt = infd;
+    glm::vec4 hitNormal = glm::vec4(0.0);
+    glm::vec4 hitPoint = glm::vec4(0.0);
+    
+    float A = glm::dot(R, R/h);
+    float B = 2 * glm::dot(e, R/h);
+    float C = dot(e, e/h);
+    
+    double roots[2];
+    size_t rootsNum = quadraticRoots(A, B, C, roots);
+    
+    if (rootsNum == 0) {
+        return NULL;
+    } else if (rootsNum == 1) {
+        lt = roots[0];
+    } else {
+        lt = std::min(roots[0], roots[1]);
+        if(lt <= appMin + eps){
+            lt = std::max(roots[0], roots[1]);
+        }
+    }
+    
+    if(lt >= appMin + eps && lt < appMax - eps){
+        hitPoint = eye + (float)lt*ray;
+        hitNormal = glm::normalize(glm::vec4(glm::cross(glm::vec3(hitPoint.x+1,hitPoint.y - q*q/p/p*hitPoint.x/hitPoint.y,0), glm::vec3(hitPoint)), 0));
+        if (glm::dot(hitNormal, ray) > 0) {
+            hitNormal = -hitNormal;
+        }
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt));
+    }
+    return NULL;
+}
+
+EllipticCone::~EllipticCone(){};
 
 // Need to support default Ctor for mesh
 BoundingVolume::BoundingVolume(){}

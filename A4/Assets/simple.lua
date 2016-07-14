@@ -8,6 +8,11 @@ grass = gr.material({1, 1, 1}, {0.0, 0.0, 0.0}, 0)
 scene_root = gr.node('root')
 scene_root:translate(0,0,-1000)
 
+e1 = gr.ellipsoid('s1', 200,300,400)
+scene_root:add_child(e1)
+e1:set_material(mat1)
+e1:translate(0,0,1000)
+
 s1 = gr.nh_sphere('s1', {0, 0, -400}, 100)
 scene_root:add_child(s1)
 s1:set_material(mat1)

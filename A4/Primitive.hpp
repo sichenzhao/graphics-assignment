@@ -25,7 +25,8 @@ enum class PrimType {
     Mesh,
     BoundingVolume,
     Triangle,
-    Ellipsoid
+    Ellipsoid,
+    EllipticCone
 };
 
 struct IntersecInfo{
@@ -56,9 +57,25 @@ public:
     virtual ~Primitive();
 };
 
+class EllipticCone : public Primitive {
+public:
+    double p;
+    double q;
+    double r;
+    double height;
+    
+    EllipticCone(double p, double q, double r, double height);
+    
+    std::shared_ptr<IntersecInfo> intersect(glm::vec4 primaryPoint, glm::vec4 primaryRay, const double min, const double max);
+    
+    virtual ~EllipticCone();
+};
+
 class Ellipsoid : public Primitive {
 public:
-    double a, b, c;
+    double a;
+    double b;
+    double c;
     
     Ellipsoid(double a, double b, double c);
     

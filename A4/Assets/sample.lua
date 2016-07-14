@@ -10,15 +10,20 @@ scene_root = gr.node('root')
 scene_root:translate(0,0,-1000)
 
 -- A small stellated dodecahedron.
+e1 = gr.ellipsoid('e1', 3,2,1)
+--e1 = gr.econe('e1', 1.2,0.6,1,1)
+scene_root:add_child(e1)
+e1:set_material(mat4)
+e1:translate(0,0,1000)
 
-plane = gr.mesh( 'plane', 'dodeca.obj' )
---plane = gr.mesh( 'plane', 'smstdodeca.obj' )
+--plane = gr.mesh( 'plane', 'dodeca.obj' )
+plane = gr.mesh( 'plane', 'smstdodeca.obj' )
 scene_root:add_child(plane)
 plane:set_material(grass)
 --plane:rotate('Z', 30)
 --plane:rotate('Y', 30)
 plane:rotate('X', 42)
---plane:scale(1/100, 1/100, 1/100)
+plane:scale(1/100, 1/100, 1/100)
 --plane:scale(10, 10, 10)
 plane:translate(0,0,1000)
 

@@ -278,6 +278,54 @@ int gr_mesh_cmd(lua_State* L)
 	return 1;
 }
 
+// Create a ellipsoid node
+extern "C"
+int gr_ellipsoid_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
+    
+    gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+    data->node = 0;
+    
+    const char* name = luaL_checkstring(L, 1);
+    
+    double a = luaL_checknumber(L, 2);
+    double b = luaL_checknumber(L, 3);
+    double c = luaL_checknumber(L, 4);
+    
+    data->node = new GeometryNode(name, new Ellipsoid(a,b,c));
+    
+    luaL_getmetatable(L, "gr.node");
+    lua_setmetatable(L, -2);
+    
+    return 1;
+}
+
+// create elliptic cone node
+extern "C"
+int gr_elli_cone_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
+    
+    gr_node_ud* data = (gr_node_ud*)lua_newuserdata(L, sizeof(gr_node_ud));
+    data->node = 0;
+    
+    const char* name = luaL_checkstring(L, 1);
+    
+    double a = luaL_checknumber(L, 2);
+    double b = luaL_checknumber(L, 3);
+    double c = luaL_checknumber(L, 4);
+    
+    double h = luaL_checknumber(L, 5);
+    
+    data->node = new GeometryNode(name, new EllipticCone(a,b,c,h));
+    
+    luaL_getmetatable(L, "gr.node");
+    lua_setmetatable(L, -2);
+    
+    return 1;
+}
+
 // Make a point light
 extern "C"
 int gr_light_cmd(lua_State* L)
@@ -528,6 +576,9 @@ static const luaL_Reg grlib_functions[] = {
   {"mesh", gr_mesh_cmd},
   {"light", gr_light_cmd},
   {"render", gr_render_cmd},
+  // New for proj
+  {"ellipsoid", gr_ellipsoid_cmd},
+  {"econe", gr_elli_cone_cmd},
   {0, 0}
 };
 
