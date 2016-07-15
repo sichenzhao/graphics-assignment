@@ -273,6 +273,7 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     
     glm::vec4 center = glm::vec4(m_pos, 1.0);
     glm::vec4 hitNormal = glm::vec4(0.0);
+    glm::vec4 hitPoint = glm::vec4(0.0);
     
     float A = glm::dot(ray, ray);
     float B = glm::dot(p - center, ray);
@@ -295,34 +296,30 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     
     if(lt >= min + eps && lt < max - eps){
         hitNormal = (p + (ray)*(float)lt - center);
-        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, p+(float)lt*ray, true, lt));
-    }
-    return NULL;
-    /**
-    float determ = pow(B, 2) - 4*A*C;
-    
-    if(determ < 0 - eps){
-        // no root
-        return NULL;
-    } else {
-        if(determ < 0 + eps){
-            // one root
-            lt = -B/(2*A);
-        } else {
-            // two roots
-            lt = -B - sqrt(determ);
-            lt = lt / (2*A);
-        }
+        hitPoint = p+(float)lt*ray;
         
-        if(lt >= min + eps && lt < max - eps){
-            nhsBool = true;
-            // closest one
-            hitNormal = (p + (ray)*(float)lt - center);
-            return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, p+(float)lt*ray, true, lt));
+        
+        // displacement for texture mapping
+        glm::vec4 disp = hitPoint - center;
+        
+        double u,v; // u width, v height
+        
+        // width
+        float angle_a = acos(-disp.z/sqrt(disp.x*disp.x + disp.z*disp.z));
+        assert(angle_a <= glm::radians(180.0f) && angle_a >= glm::radians(0.0f));
+        if (disp.x<0) {
+            angle_a = glm::radians(360.0f) - angle_a;
         }
+        u = angle_a/glm::radians(360.0f);
+        
+        // height
+        float angle_b = atan(disp.y/sqrt(disp.x*disp.x + disp.z*disp.z));
+        assert(angle_b < glm::radians(90.0f) && angle_b > glm::radians(-90.0f));
+        v = (angle_b+glm::radians(90.0f))/glm::radians(180.0f);
+        
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt, u, v));
     }
     return NULL;
-     **/
 }
 
 NonhierSphere::~NonhierSphere()

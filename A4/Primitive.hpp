@@ -35,13 +35,17 @@ struct IntersecInfo{
     PhongMaterial* mat;
     bool isIntersect;
     float t;
+    double u; // x
+    double v; // y
     
-    IntersecInfo(glm::vec4 norm, glm::vec4 hitP, bool isInter, float lt){
+    IntersecInfo(glm::vec4 norm, glm::vec4 hitP, bool isInter, float lt, double u=0, double v=0){
         normal = norm;
         hitPoint = hitP;
         mat = NULL;
         t = lt;
         isIntersect = isInter;
+        this->u = u;
+        this->v = v;
     }
 
     ~IntersecInfo(){

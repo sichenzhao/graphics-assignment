@@ -9,10 +9,18 @@ grass = gr.material({1, 1, 1}, {0.0, 0.0, 0.0}, 0)
 scene_root = gr.node('root')
 scene_root:translate(0,0,-1000)
 
+s = gr.sphere('s')
+scene_root:add_child(s)
+--s:set_material(mat1)
+s:tm_set_material(mat1, 'grid.png')
+s:scale(100, 100, 100)
+s:rotate('X', 30)
+--s:translate(0, 0, 0)
+
 -- A small stellated dodecahedron.
 e1 = gr.ellipsoid('e1', 3,2,1)
 --e1 = gr.econe('e1', 1.2,0.6,1,1)
-scene_root:add_child(e1)
+--scene_root:add_child(e1)
 e1:set_material(mat4)
 e1:translate(0,0,1000)
 

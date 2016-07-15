@@ -12,6 +12,7 @@ Image::Image()
     m_height(0),
     m_data(0)
 {
+    m_uv = NULL;
 }
 
 //---------------------------------------------------------------------------------------
@@ -25,6 +26,8 @@ Image::Image(
 	size_t numElements = m_width * m_height * m_colorComponents;
 	m_data = new double[numElements];
 	memset(m_data, 0, numElements*sizeof(double));
+    
+    m_uv = NULL;
 }
 
 //---------------------------------------------------------------------------------------
@@ -37,6 +40,8 @@ Image::Image(const Image & other)
     memcpy(m_data, other.m_data,
                 m_width * m_height * m_colorComponents * sizeof(double));
   }
+    
+  m_uv = NULL;
 }
 
 //---------------------------------------------------------------------------------------
@@ -114,6 +119,44 @@ bool Image::savePng(const std::string & filename)
 	}
 
 	return true;
+}
+
+//---------------------------------------------------------------------------------------
+bool Image::loadPng(const std::string filename)
+{
+    std::vector<unsigned char> image;
+    
+    // Encode the image
+    unsigned error = lodepng::decode(image, m_width, m_height, filename, LCT_RGB);
+    
+    size_t numElements = m_width * m_height * m_colorComponents;
+    if(NULL != m_data){
+        delete [] m_data;
+    }
+    m_data = new double[numElements];
+    
+    if(error) {
+        std::cerr << "decode error " << error << ": " << lodepng_error_text(error)
+        << std::endl;
+    }
+    
+    m_uv = new glm::vec3*[m_height];
+    for (uint y(0); y < m_height; y++) {
+        m_uv[y] = new glm::vec3[m_width];
+    }
+
+    
+    double color;
+    for (uint y(0); y < m_height; y++) {
+        for (uint x(0); x < m_width; x++) {
+            for (uint i(0); i < m_colorComponents; ++i) {
+                color = image[m_colorComponents * (m_width * y + x) + i];
+                m_uv[x][y][i] = color / 255;
+            }
+        }
+    }
+    
+    return true;
 }
 
 //---------------------------------------------------------------------------------------

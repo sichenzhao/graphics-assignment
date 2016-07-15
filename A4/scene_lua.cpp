@@ -470,6 +470,32 @@ int gr_node_set_material_cmd(lua_State* L)
   return 0;
 }
 
+// Set a texture mapping material
+extern "C"
+int gr_tm_set_material_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
+    
+    gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
+    luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+    
+    GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
+    
+    luaL_argcheck(L, self != 0, 1, "Geometry node expected");
+    
+    gr_material_ud* matdata = (gr_material_ud*)luaL_checkudata(L, 2, "gr.material");
+    luaL_argcheck(L, matdata != 0, 2, "Material expected");
+    
+    Material* material = matdata->material;
+
+    const char* filename = luaL_checkstring(L, 3);
+    luaL_argcheck(L, filename, 2, "Filename expected");
+    
+    self->setMaterial(material, filename);
+    
+    return 0;
+}
+
 // Add a scaling transformation to a node.
 extern "C"
 int gr_node_scale_cmd(lua_State* L)
@@ -602,6 +628,8 @@ static const luaL_Reg grlib_node_methods[] = {
   {"rotate", gr_node_rotate_cmd},
   {"translate", gr_node_translate_cmd},
   {"render", gr_render_cmd},
+  // for texture mapping
+  {"tm_set_material", gr_tm_set_material_cmd},
   {0, 0}
 };
 

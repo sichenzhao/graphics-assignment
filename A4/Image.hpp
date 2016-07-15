@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <glm/glm.hpp>
 
 typedef unsigned int uint;
 
@@ -43,13 +45,17 @@ public:
 	// Save this image into the PNG file with name 'filename'.
 	// Warning: If 'filename' already exists, it will be overwritten.
 	bool savePng(const std::string & filename);
+    bool loadPng(const std::string filename);
+    
+    glm::vec3 ** m_uv;
 
 	const double * data() const;
 	double * data();
+    
+    uint m_width;
+    uint m_height;
 
 private:
-	uint m_width;
-	uint m_height;
 	double * m_data;
 
 	static const uint m_colorComponents;

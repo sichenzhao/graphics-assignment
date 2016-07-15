@@ -1,4 +1,5 @@
 #include "GeometryNode.hpp"
+#include "Image.hpp"
 
 //---------------------------------------------------------------------------------------
 GeometryNode::GeometryNode(
@@ -24,4 +25,36 @@ void GeometryNode::setMaterial( Material *mat )
 	//     crash the program.
 
 	m_material = mat;
+}
+
+// setMatrial for texture mapped sphere
+void GeometryNode::setMaterial( Material *mat, const std::string filename )
+{
+    m_material = mat;
+    if (m_primitive->m_type != PrimType::Sphere) {
+        return;
+    }
+    
+    Image image(0,0);
+    image.loadPng(filename);
+    
+    PhongMaterial* p_material = static_cast<PhongMaterial*>(m_material);
+    p_material->uv = image.m_uv;
+    p_material->width = image.m_width;
+    p_material->height = image.m_height;
+    
+    // Test loaded correctly
+    /**
+    for (uint y = 0; y < image.m_width; ++y) {
+        for (uint x = 0; x < image.m_height; ++x) {
+            // Red: increasing from top to bottom
+            image(x, y, 0) = image.m_uv[x][y].r;
+            // Green: increasing from left to right
+            image(x, y, 1) = image.m_uv[x][y].g;
+            // Blue: in lower-left and upper-right corners
+            image(x, y, 2) = image.m_uv[x][y].b;
+        }
+    }
+    image.savePng("test_loading.png");
+     **/
 }

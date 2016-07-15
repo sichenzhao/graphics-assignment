@@ -12,5 +12,10 @@ public:
     glm::vec3 m_kd;
     glm::vec3 m_ks;
     
+    glm::vec3 ** uv;
+    int width, height;
+    glm::vec3 get_m_kd();
+    glm::vec3 get_m_kd(double x, double y);
+    
     double m_shininess;
 };

@@ -5,7 +5,22 @@ PhongMaterial::PhongMaterial(
 	: m_kd(kd)
 	, m_ks(ks)
 	, m_shininess(shininess)
+    , uv(0)
+    , width(0)
+    , height(0)
 {}
 
 PhongMaterial::~PhongMaterial()
 {}
+
+glm::vec3 PhongMaterial::get_m_kd(){
+    return m_kd;
+}
+
+glm::vec3 PhongMaterial::get_m_kd(double x, double y){
+    if (uv == NULL) {
+        return m_kd;
+    } else {
+        return uv[(int)(x*width)][(int)(y*height)];
+    }
+}

@@ -32,7 +32,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
     if (maxBounce<=0 || isnan(pixelPoint.x)) {
         return glm::vec3(0.0);
     }
-    glm::vec3 col = glm::vec3(0.0);
+    glm::vec3 col = glm::vec3(-1.0);
     glm::vec3 hitNormal = glm::vec3(0.0);
     double t = infd;
     PhongMaterial* mat = NULL;
@@ -46,9 +46,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         // hit
         
         // ambient light
-        col.r = hitInfo->mat->m_kd.r*(ambient.r)/lightNum;
-        col.g = hitInfo->mat->m_kd.g*(ambient.g)/lightNum;
-        col.b = hitInfo->mat->m_kd.b*(ambient.b)/lightNum;
+        col.r = hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v).r*(ambient.r)/lightNum;
+        col.g = hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v).g*(ambient.g)/lightNum;
+        col.b = hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v).b*(ambient.b)/lightNum;
         
         // determine shadow
         bool isShadow = false;
@@ -69,7 +69,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             
             // diffuse
             // direct light
-            col += directLight(hitInfo->mat->m_kd, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
+            col += directLight(hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v), glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
             col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
@@ -242,9 +242,9 @@ void render(
                 image(x,y,1) += col.y;
                 image(x,y,2) += col.z;
             }
-            image(x,y,0) = std::max(0.0, std::min(1.0, image(x,y,0)));
-            image(x,y,1) = std::max(0.0, std::min(1.0, image(x,y,1)));
-            image(x,y,2) = std::max(0.0, std::min(1.0, image(x,y,2)));
+            image(x,y,0) = std::min(1.0, image(x,y,0));
+            image(x,y,1) = std::min(1.0, image(x,y,1));
+            image(x,y,2) = std::min(1.0, image(x,y,2));
         }
     }
     return;
@@ -317,7 +317,7 @@ void A4_Render(
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
             //if((x+y)%(51)==0 && (y-x)%(17)==0){
-                if (image(x, y, 0)==0 && image(x,y,1)==0 && image(x,y,2)==0) {
+                if (image(x, y, 0)<0 || image(x,y,1)<0 || image(x,y,2)<0) {
                     // Red: increasing from top to bottom
                     image(x, y, 0) = (double)(y%100) / 170;
                     // Green: increasing from left to right
