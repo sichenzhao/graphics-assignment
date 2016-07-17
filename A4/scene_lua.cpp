@@ -496,6 +496,27 @@ int gr_tm_set_material_cmd(lua_State* L)
     return 0;
 }
 
+// Set a transparent
+extern "C"
+int gr_node_set_transparent_cmd(lua_State* L)
+{
+    GRLUA_DEBUG_CALL;
+    
+    gr_node_ud* selfdata = (gr_node_ud*)luaL_checkudata(L, 1, "gr.node");
+    luaL_argcheck(L, selfdata != 0, 1, "Node expected");
+    
+    GeometryNode* self = dynamic_cast<GeometryNode*>(selfdata->node);
+    
+    luaL_argcheck(L, self != 0, 1, "Geometry node expected");
+    
+    const double transInd = luaL_checknumber(L, 2);
+    
+    PhongMaterial* pmat = static_cast<PhongMaterial*>(self->m_material);
+    pmat->setTransparent(true, transInd);
+    
+    return 0;
+}
+
 // Add a scaling transformation to a node.
 extern "C"
 int gr_node_scale_cmd(lua_State* L)
@@ -630,6 +651,8 @@ static const luaL_Reg grlib_node_methods[] = {
   {"render", gr_render_cmd},
   // for texture mapping
   {"tm_set_material", gr_tm_set_material_cmd},
+  // for transmission
+  {"set_transparent", gr_node_set_transparent_cmd},
   {0, 0}
 };
 

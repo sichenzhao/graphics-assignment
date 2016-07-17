@@ -8,6 +8,8 @@ PhongMaterial::PhongMaterial(
     , uv(0)
     , width(0)
     , height(0)
+    , isTrans(false)
+    , transInd(-1)
 {}
 
 PhongMaterial::~PhongMaterial()
@@ -23,4 +25,9 @@ glm::vec3 PhongMaterial::get_m_kd(double x, double y){
     } else {
         return uv[(int)(x*width)][(int)(y*height)];
     }
+}
+
+void PhongMaterial::setTransparent(bool val, double index) {
+    isTrans = val;
+    transInd = index;
 }

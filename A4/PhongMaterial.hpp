@@ -17,5 +17,9 @@ public:
     glm::vec3 get_m_kd();
     glm::vec3 get_m_kd(double x, double y);
     
+    bool isTrans;
+    double transInd;
+    void setTransparent(bool val, double transInd);
+    
     double m_shininess;
 };
