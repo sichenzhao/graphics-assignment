@@ -24,6 +24,7 @@ std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 eye, glm::vec4 ray,
     double lt = infd;
     glm::vec4 hitNormal = glm::vec4(0.0);
     glm::vec4 hitPoint = glm::vec4(0.0);
+    bool hitIn = true;
     
     float A = glm::dot((r/q), (r/q));
     float B = 2 * glm::dot(p/q, r/q);
@@ -40,6 +41,7 @@ std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 eye, glm::vec4 ray,
         lt = std::min(roots[0], roots[1]);
         if(lt <= min + eps){
             lt = std::max(roots[0], roots[1]);
+            hitIn = false;
         }
     }
     
@@ -54,7 +56,7 @@ std::shared_ptr<IntersecInfo> Ellipsoid::intersect(glm::vec4 eye, glm::vec4 ray,
         if (glm::dot(hitNormal, ray) > 0) {
             hitNormal = -hitNormal;
         }
-        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt));
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt, hitIn));
     }
     return NULL;
 }
@@ -76,6 +78,8 @@ std::shared_ptr<IntersecInfo> EllipticCone::intersect(glm::vec4 eye, glm::vec4 r
     
     const double appMin = std::max(min, heightMin);
     const double appMax = std::min(max, heightMax);
+    
+    bool hitIn = true;
     
     glm::vec3 h = glm::vec3(p*p, q*q, -r*r);
     glm::vec3 e = glm::vec3(eye);
@@ -99,6 +103,7 @@ std::shared_ptr<IntersecInfo> EllipticCone::intersect(glm::vec4 eye, glm::vec4 r
         lt = std::min(roots[0], roots[1]);
         if(lt <= appMin + eps){
             lt = std::max(roots[0], roots[1]);
+            hitIn = false;
         }
     }
     
@@ -108,7 +113,7 @@ std::shared_ptr<IntersecInfo> EllipticCone::intersect(glm::vec4 eye, glm::vec4 r
         if (glm::dot(hitNormal, ray) > 0) {
             hitNormal = -hitNormal;
         }
-        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt));
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt, hitIn));
     }
     return NULL;
 }
@@ -147,6 +152,7 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     glm::vec4 b1 = glm::vec4(xmax, ymax, zmax, 0.0);
     
     glm::vec3 normal;
+    bool hitIn  = true;
     
     double tmin, tmax, txmin, txmax, tymin, tymax, tzmin, tzmax;
     
@@ -192,8 +198,6 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     if (tzmax < tmax)
         tmax = tzmax;
     
-    
-    
     if(tmin > tmax){
         double tmp = tmin;
         tmin = tmax;
@@ -209,6 +213,7 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
         }
         //realT = tmax;
         realT = min + 2*eps;
+        hitIn = false;
     } else if(tmin>=max - eps){
         return NULL;
     } else {
@@ -216,7 +221,7 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     }
     
     if(anotherT!=NULL){
-        *anotherT = tmax;
+        *anotherT = std::min(tmax, max);
     }
     
     assert(tmin <= tmax);
@@ -229,7 +234,7 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     if (lt > tymax - eps && lt < tymax + eps) normal = glm::vec3(0, -1, 0);
     if (lt > tzmin - eps && lt < tzmin + eps) normal = glm::vec3(0, 0, 1);
     if (lt > tzmax - eps && lt < tzmax + eps) normal = glm::vec3(0, 0, -1);
-    return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt));
+    return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt, hitIn));
 }
 
 BoundingVolume::~BoundingVolume()
@@ -274,6 +279,7 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     glm::vec4 center = glm::vec4(m_pos, 1.0);
     glm::vec4 hitNormal = glm::vec4(0.0);
     glm::vec4 hitPoint = glm::vec4(0.0);
+    bool hitIn = true;
     
     float A = glm::dot(ray, ray);
     float B = glm::dot(p - center, ray);
@@ -291,6 +297,7 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
         lt = std::min(roots[0], roots[1]);
         if(lt <= min + eps){
             lt = std::max(roots[0], roots[1]);
+            hitIn = false;
         }
     }
     
@@ -311,13 +318,19 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
             angle_a = glm::radians(360.0f) - angle_a;
         }
         u = angle_a/glm::radians(360.0f);
+        if (u==1) {
+            u = 0;
+        }
         
         // height
         float angle_b = atan(disp.y/sqrt(disp.x*disp.x + disp.z*disp.z));
         assert(angle_b < glm::radians(90.0f) && angle_b > glm::radians(-90.0f));
         v = (angle_b+glm::radians(90.0f))/glm::radians(180.0f);
+        if (v == 1) {
+            v = 0;
+        }
         
-        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt, u, v));
+        return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, hitPoint, true, lt, hitIn, u, v));
     }
     return NULL;
 }
@@ -383,7 +396,7 @@ std::shared_ptr<IntersecInfo> Triangle::intersect(glm::vec4 p, glm::vec4 ray, co
         if(glm::dot(n, primaryRay) > 0-eps){
             n = -n;
         }
-        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(n, 0.0), p+(((float)(t-eps))*ray), true, t));
+        return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(n, 0.0), p+(((float)(t-eps))*ray), true, t, true));
     }
     return NULL;
 }

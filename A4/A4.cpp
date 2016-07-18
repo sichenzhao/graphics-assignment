@@ -91,10 +91,35 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         
         glm::vec3 reflectedRay = glm::reflect(r_primaryRay, r_normalVec);
         
-#ifdef MR
-        glm::vec3 reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), reflectedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
-#else
         glm::vec3 reflectedColor = glm::vec3(0.0);
+        glm::vec3 refractedColor = glm::vec3(0.0);
+        
+#ifdef MR
+        reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), reflectedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+
+        //float reflectedPortion = 0.5;
+        float reflectedPortion = 0;
+        if (hitInfo->mat->isTrans) {
+            // calculate refracted ray direction
+            // TODO: now assume alwasy from vacuum to indices
+            {
+                float eta = (hitInfo->hitIn) ? (1/hitInfo->mat->transInd) : (hitInfo->mat->transInd);
+                float k = 1 - eta*eta*(1.0 - glm::dot(-r_primaryRay, r_normalVec)*glm::dot(-r_primaryRay, r_normalVec));
+                if (k<0) {
+                    // 全反射
+                    reflectedPortion = 1;
+                } else {
+                    // calculate refracted color
+                    glm::vec3 refractedRay = eta * r_primaryRay - (eta * dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
+                    
+                    refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+                }
+            }
+            
+            // TODO: apply frenel's equation
+            reflectedColor *= reflectedPortion;
+            refractedColor *= 1 - reflectedPortion;
+        }
 #endif
         
         if (reflectedColor==glm::vec3(0.0)){
@@ -103,7 +128,11 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             dout(glm::to_string(reflectedColor) + "!!!!!!!");
         }
         
+        reflectedColor = glm::clamp(reflectedColor, 0.0f, 1.0f);
+        refractedColor = glm::clamp(refractedColor, 0.0f, 1.0f);
+        
         col += reflectedColor;
+        col += refractedColor;
     }
     dout("==============ray end=================");
     return col;
@@ -276,23 +305,23 @@ void A4_Render(
     double d = h/(2*tan(glm::radians(fovy/2)));
     //double fovx = 2.0 * glm::atan((double)w/2, d);
     glm::vec3 left = glm::normalize(glm::cross(up, view - eye));
-
+    
     std::thread* threads[threadNum];
     
     if(threadNum > 1){
-    for(int i=0; i<threadNum; i++){
-        threads[i] = new std::thread(render, h*(i+1)/threadNum, w, i*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
-    }
-    
-    for (int i=0; i<threadNum; i++) {
-        if (threads[i]->joinable()) {
-            threads[i]->join();
+        for(int i=0; i<threadNum; i++){
+            threads[i] = new std::thread(render, h*(i+1)/threadNum, w, i*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
         }
-    }
+        
+        for (int i=0; i<threadNum; i++) {
+            if (threads[i]->joinable()) {
+                threads[i]->join();
+            }
+        }
     } else {
         render(h*(0+1)/threadNum, w, 0*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
     }
-
+    
 #ifdef RELEASE
     //std::cout << "\033\033[" << 1 << ";" << 1 << "H100%" << std::endl;
 #endif
@@ -317,14 +346,14 @@ void A4_Render(
     for (uint y = 0; y < h; ++y) {
         for (uint x = 0; x < w; ++x) {
             //if((x+y)%(51)==0 && (y-x)%(17)==0){
-                if (image(x, y, 0)<0 || image(x,y,1)<0 || image(x,y,2)<0) {
-                    // Red: increasing from top to bottom
-                    image(x, y, 0) = (double)(y%100) / 170;
-                    // Green: increasing from left to right
-                    image(x, y, 1) = (double)(x%40) / 100;
-                    // Blue: in lower-left and upper-right corners
-                    image(x, y, 2) = (double)((x+y)%10)/70;
-                }
+            if (image(x, y, 0)<0 || image(x,y,1)<0 || image(x,y,2)<0) {
+                // Red: increasing from top to bottom
+                image(x, y, 0) = (double)(y%100) / 170;
+                // Green: increasing from left to right
+                image(x, y, 1) = (double)(x%40) / 100;
+                // Blue: in lower-left and upper-right corners
+                image(x, y, 2) = (double)((x+y)%10)/70;
+            }
             //}
         }
     }

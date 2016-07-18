@@ -9,7 +9,7 @@ scene_root = gr.node('root')
 scene_root:translate(0,0,-1000)
 
 e1 = gr.ellipsoid('s1', 200,300,400)
-scene_root:add_child(e1)
+--scene_root:add_child(e1)
 e1:set_material(mat1)
 e1:translate(0,0,1000)
 
@@ -29,7 +29,7 @@ s3:set_material(mat2)
 s3:translate(0,0,1000)
 
 plane = gr.mesh( 'plane', 'bplane.obj' )
-scene_root:add_child(plane)
+--scene_root:add_child(plane)
 plane:set_material(grass)
 plane:scale(1/10, 1/10, 1)
 plane:translate(0,-200,1000 - 500)

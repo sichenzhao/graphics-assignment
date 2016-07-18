@@ -140,15 +140,15 @@ bool Image::loadPng(const std::string filename)
         << std::endl;
     }
     
-    m_uv = new glm::vec3*[m_height];
-    for (uint y(0); y < m_height; y++) {
-        m_uv[y] = new glm::vec3[m_width];
+    m_uv = new glm::vec3*[m_width];
+    for (uint x(0); x < m_width; x++) {
+        m_uv[x] = new glm::vec3[m_height];
     }
 
     
     double color;
-    for (uint y(0); y < m_height; y++) {
-        for (uint x(0); x < m_width; x++) {
+    for (uint x(0); x < m_width; x++) {
+        for (uint y(0); y < m_height; y++) {
             for (uint i(0); i < m_colorComponents; ++i) {
                 color = image[m_colorComponents * (m_width * y + x) + i];
                 m_uv[x][y][i] = color / 255;

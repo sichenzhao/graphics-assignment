@@ -29,7 +29,7 @@ public:
     void setupCells();
     void addObj(Triangle* triangle);
     
-    std::shared_ptr<IntersecInfo> intersect(glm::vec4 p, glm::vec4 ray, const double firstT, const double secondT, const double min, const double max);
+    std::shared_ptr<IntersecInfo> intersect(glm::vec4 p, glm::vec4 ray, const double firstT, const double secondT, bool bvHitIn, const double min, const double max);
     
     // Number of cells
     int nx, ny, nz;

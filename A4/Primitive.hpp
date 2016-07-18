@@ -9,7 +9,7 @@
 #define BV
 
 // important! In order for mirror reflection
-//#define MR
+#define MR
 
 //static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
@@ -37,8 +37,9 @@ struct IntersecInfo{
     float t;
     double u; // x
     double v; // y
+    bool hitIn;
     
-    IntersecInfo(glm::vec4 norm, glm::vec4 hitP, bool isInter, float lt, double u=0, double v=0){
+    IntersecInfo(glm::vec4 norm, glm::vec4 hitP, bool isInter, float lt, bool hitIn, double u=0, double v=0){
         normal = norm;
         hitPoint = hitP;
         mat = NULL;
@@ -46,6 +47,7 @@ struct IntersecInfo{
         isIntersect = isInter;
         this->u = u;
         this->v = v;
+        this->hitIn = hitIn;
     }
 
     ~IntersecInfo(){

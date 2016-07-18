@@ -113,6 +113,15 @@ void Grid::addObj(Triangle* triangle){
     assert(ny2<ny);
     assert(nz2<nz);
     
+    /**
+    if (m_facesp->size() <= 5) {
+        nx1 = ny1 = nz1= 0;
+        nx2 = nx - 1;
+        ny2 = ny - 1;
+        nz2 = nz - 1;
+    }
+     **/
+    
     // add triangle to all bounding volumes
     for (int x = nx1; x<=nx2; x++) {
         for (int y = ny1; y<=ny2; y++) {
@@ -146,7 +155,7 @@ static void update_t(float &t, const float firstT, const float dt){
     }
 }
 
-std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const double firstT, const double secondT, const double min, const double max){
+std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const double firstT, const double secondT, bool bvHitIn, const double min, const double max){
     assert(secondT >= firstT - eps);
     
     shared_ptr<IntersecInfo> retInfo = NULL;
@@ -185,6 +194,12 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
     if (iz == nz) {
         iz--;
     }
+    assert(ix<nx && ix>=0);
+    assert(iy<nx && iy>=0);
+    assert(iz<nx && iz>=0);
+    
+    // judge if startP in bounding box surface or not
+    bool hitIn = bvHitIn;
     
     // find the initial t for each coordinates
     float tx_next, ty_next, tz_next;
@@ -200,6 +215,7 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
             shared_ptr<IntersecInfo> tmpInfo = NULL;
             tmpInfo = (*it)->intersect(p, ray, min, max);
             if (tmpInfo != NULL) {
+                tmpInfo->hitIn = hitIn;
                 if (retInfo != NULL && tmpInfo->t < retInfo->t) {
                     retInfo = tmpInfo;
                 } else if (retInfo == NULL) {
