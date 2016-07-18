@@ -286,6 +286,32 @@ std::shared_ptr<IntersecInfo> NonhierSphere::intersect(glm::vec4 p, glm::vec4 ra
     B = 2*B;
     float C = dot(p - center, p - center) - pow(m_radius, 2);
     
+    /**
+     float determ = pow(B, 2) - 4*A*C;
+     
+     if(determ < 0 - eps){
+     // no root
+     return NULL;
+     } else {
+     if(determ < 0 + eps){
+     // one root
+     lt = -B/(2*A);
+     } else {
+     // two roots
+     lt = -B - sqrt(determ);
+     lt = lt / (2*A);
+     }
+     
+     if(lt >= min + eps && lt < max - eps){
+     nhsBool = true;
+     // closest one
+     hitNormal = (p + (ray)*(float)lt - center);
+     return std::shared_ptr<IntersecInfo>( new IntersecInfo(hitNormal, p+(float)lt*ray, true, lt));
+     }
+     }
+     return NULL;
+     **/
+    
     double roots[2];
     size_t rootsNum = quadraticRoots(A, B, C, roots);
     

@@ -120,13 +120,18 @@ size_t quadraticRoots( double A, double B, double C, double roots[2] )
 	} else {
 		/*  Compute the discrimanant D=b^2 - 4ac */
 		D = B*B - 4*A*C;
-		if( D < eps ) {
+		if( D < 0 - eps ) {
 			return 0;
-		} else {
+        } else if (D < eps) {
+            q = -( B + SIGN(B)*sqrt(D) ) / 2.0;
+            roots[1] = roots[0] = q / A;
+            return 2;
+        } else {
 			/* Two real roots */
 			q = -( B + SIGN(B)*sqrt(D) ) / 2.0;
 			roots[0] = q / A;
-			if( q != 0 ) {
+//			if( q > eps || q < 0-eps) {
+            if( q > eps ) {
 				roots[1] = C / q;
 			} else {
 				roots[1] = roots[0];
