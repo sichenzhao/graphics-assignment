@@ -126,15 +126,17 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
                     // calculate refracted color
                     glm::vec3 refractedRay = eta * r_primaryRay - eta * (dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
                     
+                    int errorAv = 10;
+                    
                     dout("eye " + glm::to_string(eye));
                     dout("pixelPoint " + glm::to_string(pixelPoint));
                     dout("r_primary " + glm::to_string(r_primaryRay));
                     dout("refraction normal " + glm::to_string(r_normalVec));
-                    dout("refraction hit point " + glm::to_string(glm::vec3(hitInfo->hitPoint) + 8 * eps * refractedRay));
+                    dout("refraction hit point " + glm::to_string(glm::vec3(hitInfo->hitPoint) + errorAv * eps * refractedRay));
                     dout("refracted ray " + glm::to_string(refractedRay));
                     dout("Gonna recursively call rayColor");
                     
-                    refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint) + 8 * eps * refractedRay, refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+                    refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint) + errorAv * eps * refractedRay, refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
                 }
             }
             
