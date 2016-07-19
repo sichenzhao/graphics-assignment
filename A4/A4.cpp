@@ -287,7 +287,25 @@ void render(
             // print percentage on (1,1)
             //std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
 #endif
-            
+      
+            left = glm::normalize(left);
+#ifdef AA
+            for (int i = 0; i < 4; i++) {
+                glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*left;
+                pointOnImage -= ((float)(i%2)) * left;
+                pointOnImage -= ((float)(i/2)) * up;
+                
+                int lightNum = (int)lights.size();
+                for (auto it = lights.begin(); it != lights.end(); it++) {
+                    glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
+                    col = 0.25f * col;
+                    //printColor(x, y, col.x, col.y, col.z);
+                    image(x,y,0) += col.x;
+                    image(x,y,1) += col.y;
+                    image(x,y,2) += col.z;
+                }
+            }
+#else
             // TODO: change signature of rayColor from pointOnImage to primaryRay
             glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*glm::normalize(left);
             
@@ -299,6 +317,7 @@ void render(
                 image(x,y,1) += col.y;
                 image(x,y,2) += col.z;
             }
+#endif
             image(x,y,0) = std::min(1.0, image(x,y,0));
             image(x,y,1) = std::min(1.0, image(x,y,1));
             image(x,y,2) = std::min(1.0, image(x,y,2));
@@ -347,6 +366,7 @@ void A4_Render(
             }
         }
     } else {
+        // ye xe ys xs
         render(h*(0+1)/threadNum, w, 0*h/threadNum, 0, h, w, eye, left, up, view, d, root, std::ref(image), std::ref(lights), ambient);
     }
     

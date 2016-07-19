@@ -8,8 +8,11 @@
 // important!! In order for grid to work, cannot be changed
 #define BV
 
-// important! In order for mirror reflection
+// important!! In order for mirror reflection
 #define MR
+
+// important!! In order for antiAliasing works
+#define AA
 
 //static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
