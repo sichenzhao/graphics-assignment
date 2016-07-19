@@ -261,6 +261,7 @@ glm::vec3 getCol (glm::vec3 eye,
                   int lightNum,
                   float rand,
                   float d,
+                  float focalD,
                   
                   // What to render
                   SceneNode * root,
@@ -269,7 +270,6 @@ glm::vec3 getCol (glm::vec3 eye,
 #ifdef DF
     glm::vec3 col = glm::vec3(0.0f);
     int eyeNum = 3;
-    int focalD = 800;
     // TODO: for testing, define focal distance here
     // TODO: suppose camera disk radius is one
     float cameraR = 10.0f;
@@ -331,6 +331,7 @@ void render(
             
 #ifdef AA
             for (int i = 0; i < 4; i++) {
+                float focalD = sqrt(glm::dot(view - eye, view - eye));
                 glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*left;
                 pointOnImage -= ((float)(i%2)) * left;
                 pointOnImage -= ((float)(i/2)) * up;
@@ -341,7 +342,7 @@ void render(
                 
                 int lightNum = (int)lights.size();
                 for (auto it = lights.begin(); it != lights.end(); it++) {
-                    glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, d, root, ambient);
+                    glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, d, focalD, root, ambient);
                     col = 0.25f * col;
                     //printColor(x, y, col.x, col.y, col.z);
                     image(x,y,0) += col.x;

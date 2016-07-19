@@ -36,6 +36,7 @@ glm::vec3 getCol (glm::vec3 eye,
                   int lightNum,
                   float rand,
                   float d,
+                  float focalD,
                   
                   // What to render
                   SceneNode * root,
