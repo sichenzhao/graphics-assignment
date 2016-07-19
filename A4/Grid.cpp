@@ -45,19 +45,19 @@ void Grid::setupCells(){
     if (m_facesp->size() > 1000 || wx * wy * wz==0) {
         nx = ny = nz = 10;
     } else {
-     unsigned long num_objects = m_facesp->size();
-     float multiplier = 2.0f;
-     float s = pow(wx * wy * wz / num_objects, 0.3333333);
-     nx = multiplier * wx / s + 1;
-     ny = multiplier * wy / s + 1;
-     nz = multiplier * wz / s + 1;
+        unsigned long num_objects = m_facesp->size();
+        float multiplier = 2.0f;
+        float s = pow(wx * wy * wz / num_objects, 0.3333333);
+        nx = multiplier * wx / s + 1;
+        ny = multiplier * wy / s + 1;
+        nz = multiplier * wz / s + 1;
     }
     
     nx = ny = nz = 6;
     
-    cx = wx / nx;
-    cy = wy / ny;
-    cz = wz / nz;
+    cx = max((wx/nx), (float)eps);
+    cy = max(wy / ny, (float)eps);
+    cz = max(wz / nz, (float)eps);
     
     // reserve enough space for cells
     cells.reserve(nx * ny * nz);
@@ -112,15 +112,6 @@ void Grid::addObj(Triangle* triangle){
     assert(nx2<nx);
     assert(ny2<ny);
     assert(nz2<nz);
-    
-    /**
-    if (m_facesp->size() <= 5) {
-        nx1 = ny1 = nz1= 0;
-        nx2 = nx - 1;
-        ny2 = ny - 1;
-        nz2 = nz - 1;
-    }
-     **/
     
     // add triangle to all bounding volumes
     for (int x = nx1; x<=nx2; x++) {
@@ -181,6 +172,23 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
     
     // find the start cell of ray bbox intersection
     glm::vec4 startP = p + ray * (float) firstT;
+    if (firstT == secondT) {
+        startP = p;
+    }
+    // fix startP coord when too small
+    float xd, yd, zd;
+    xd = startP.x - bvp->xmin;
+    yd = startP.y - bvp->ymin;
+    zd = startP.z - bvp->zmin;
+    if (xd > -eps && xd < eps) {
+        startP.x = bvp->xmin;
+    }
+    if (yd > -eps && yd < eps) {
+        startP.y = bvp->ymin;
+    }
+    if (zd > -eps && zd < eps) {
+        startP.z = bvp->zmin;
+    }
     int ix, iy, iz;
     ix = (startP.x - bvp->xmin) / cx;
     iy = (startP.y - bvp->ymin) / cy;
@@ -195,8 +203,8 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
         iz--;
     }
     assert(ix<nx && ix>=0);
-    assert(iy<nx && iy>=0);
-    assert(iz<nx && iz>=0);
+    assert(iy<ny && iy>=0);
+    assert(iz<nz && iz>=0);
     
     // judge if startP in bounding box surface or not
     bool hitIn = bvHitIn;
@@ -209,7 +217,7 @@ std::shared_ptr<IntersecInfo> Grid::intersect(glm::vec4 p, glm::vec4 ray, const 
     update_t(tx_next, firstT, dtx);
     update_t(ty_next, firstT, dty);
     update_t(tz_next, firstT, dtz);
-
+    
     while (true) {
         for (auto it=cells[ix + iy*nx + iz*ny*nx].begin(); it!=cells[ix + iy*nx + iz*ny*nx].end(); it++) {
             shared_ptr<IntersecInfo> tmpInfo = NULL;

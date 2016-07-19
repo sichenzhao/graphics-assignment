@@ -53,8 +53,10 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
     //    return bvbInfo;
     //}
     
-    return grid.intersect(primaryPoint, primaryRay, bvbInfo->t, anotherT, bvbInfo->hitIn, min, max);
-#else
+    if(m_faces.size() > 5){
+        return grid.intersect(primaryPoint, primaryRay, bvbInfo->t, anotherT, bvbInfo->hitIn, min, max);
+    }
+#endif
     bool hitIn = true;
     bool mBool = false;
     double tMesh = infd;
@@ -76,7 +78,6 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
         return std::shared_ptr<IntersecInfo>(new IntersecInfo(glm::vec4(normalTriangle, 0.0), primaryPoint + (float)tMesh * primaryRay, true, tMesh, hitIn));
     }
     return NULL;
-#endif
 }
 
 std::ostream& operator<<(std::ostream& out, const Mesh& mesh)

@@ -207,12 +207,12 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     assert(tmin <= tmax);
     
     double realT;
-    if (tmin<min+eps) {
-        if (tmax<min+eps || tmax>=max - eps) {
+    if (tmin<=min+eps) {
+        if (tmax<=min+eps || tmax>=max-eps) {
             return NULL;
         }
-        //realT = tmax;
-        realT = min + 2*eps;
+        // return hit point
+        realT = tmax;
         hitIn = false;
     } else if(tmin>=max - eps){
         return NULL;
@@ -228,13 +228,17 @@ std::shared_ptr<IntersecInfo> BoundingVolume::intersect(glm::vec4 p, glm::vec4 r
     // hits nh_cube
     lt = std::min(lt, realT);
     
-    if(lt > txmin - eps && lt < txmin + eps) normal = glm::vec3(1,0,0);
+    if (lt > txmin - eps && lt < txmin + eps) normal = glm::vec3(1,0,0);
     if (lt > txmax - eps && lt < txmax + eps) normal = glm::vec3(-1, 0, 0);
     if (lt > tymin - eps && lt < tymin + eps) normal = glm::vec3(0, 1, 0);
     if (lt > tymax - eps && lt < tymax + eps) normal = glm::vec3(0, -1, 0);
     if (lt > tzmin - eps && lt < tzmin + eps) normal = glm::vec3(0, 0, 1);
     if (lt > tzmax - eps && lt < tzmax + eps) normal = glm::vec3(0, 0, -1);
-    return std::shared_ptr<IntersecInfo>( new IntersecInfo(glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt, hitIn));
+    
+    assert(lt > min+eps && lt < max - eps);
+
+    // if not hit in, the normal should be reflected
+    return std::shared_ptr<IntersecInfo>( new IntersecInfo(((hitIn)?1.0f:-1.0f) * glm::vec4(normal, 0.0), p + ((float)lt * ray), true, lt, hitIn));
 }
 
 BoundingVolume::~BoundingVolume()

@@ -18,6 +18,12 @@ void dout(std::string msg){
         std::cout << msg << std::endl;
     }
 }
+
+void dout(std::string msg, bool show){
+    if(show){
+        std::cout << msg << std::endl;
+    }
+}
 #else
 #define threadNum 10
 #define RELEASE
@@ -33,6 +39,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         return glm::vec3(0.0);
     }
     glm::vec3 col = glm::vec3(-1.0);
+    if (maxBounce != MAX_BOUNCE) {
+        col = glm::vec3(0.0);
+    }
     glm::vec3 hitNormal = glm::vec3(0.0);
     double t = infd;
     PhongMaterial* mat = NULL;
@@ -40,7 +49,6 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
     
     if(hitInfo == NULL){
         // return background
-        dout("==============ray end=================");
         return col;
     } else {
         // hit
@@ -72,21 +80,13 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             col += directLight(hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v), glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
+            
             col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
         }
         
         // recursive mirror specular
         // Since mirror reflection, shininess is not working for V and R are the same
-        
-        if (hitInfo->mat->m_ks == glm::vec3(0.9)) {
-            dout("mirror normal " + glm::to_string(glm::normalize(glm::vec3(hitInfo->normal))));
-            dout("mirror hit point " + glm::to_string(hitInfo->hitPoint));
-            dout("primary ray " + glm::to_string(glm::vec3(hitInfo->hitPoint) - eye));
-            dout("reflected ray " + glm::to_string(glm::reflect(glm::vec3(hitInfo->hitPoint) - eye, glm::normalize(glm::vec3(hitInfo->normal)))));
-            dout("Gonna recursively call rayColor");
-        }
-        
-        glm::vec3 r_primaryRay = glm::normalize(glm::vec3(hitInfo->hitPoint) - eye);
+        glm::vec3 r_primaryRay = glm::normalize(pixelPoint - eye);
         glm::vec3 r_normalVec = glm::normalize(glm::vec3(hitInfo->normal));
         
         glm::vec3 reflectedRay = glm::reflect(r_primaryRay, r_normalVec);
@@ -94,25 +94,47 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         glm::vec3 reflectedColor = glm::vec3(0.0);
         glm::vec3 refractedColor = glm::vec3(0.0);
         
+        /**
+        dout("reflected normal " + glm::to_string(glm::normalize(glm::vec3(hitInfo->normal))));
+        dout("returned hit point " + glm::to_string(glm::vec3(hitInfo->hitPoint)));
+        dout("reflected hit point " + glm::to_string(glm::vec3(hitInfo->hitPoint) + 10*eps * reflectedRay));
+        dout("reflected ray " + glm::to_string(2*reflectedRay));
+        dout("reflected point " + glm::to_string(2*reflectedRay + glm::vec3(hitInfo->hitPoint)));
+         **/
 #ifdef MR
-        reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), reflectedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+        // to avoid reflected ray hit the object again, use (8*eps*reflectedray + hitpoint) as a new start point
+        reflectedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint) + 8*eps * reflectedRay, 2*reflectedRay + glm::vec3(hitInfo->hitPoint) + 8*eps * reflectedRay, light, lightNum, root, ambient, maxBounce-1);
+        
+        //if (reflectedColor != glm::vec3(0.0)) {
+        //dout("reflectedColor is " + glm::to_string(reflectedColor));
+        //}
 
         //float reflectedPortion = 0.5;
         float reflectedPortion = 0;
         if (hitInfo->mat->isTrans) {
+            
             // calculate refracted ray direction
             // TODO: now assume alwasy from vacuum to indices
             {
                 float eta = (hitInfo->hitIn) ? (1/hitInfo->mat->transInd) : (hitInfo->mat->transInd);
                 float k = 1 - eta*eta*(1.0 - glm::dot(-r_primaryRay, r_normalVec)*glm::dot(-r_primaryRay, r_normalVec));
+                
                 if (k<0) {
                     // 全反射
                     reflectedPortion = 1;
                 } else {
                     // calculate refracted color
-                    glm::vec3 refractedRay = eta * r_primaryRay - (eta * dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
+                    glm::vec3 refractedRay = eta * r_primaryRay - eta * (dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
                     
-                    refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint), refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+                    dout("eye " + glm::to_string(eye));
+                    dout("pixelPoint " + glm::to_string(pixelPoint));
+                    dout("r_primary " + glm::to_string(r_primaryRay));
+                    dout("refraction normal " + glm::to_string(r_normalVec));
+                    dout("refraction hit point " + glm::to_string(glm::vec3(hitInfo->hitPoint) + 8 * eps * refractedRay));
+                    dout("refracted ray " + glm::to_string(refractedRay));
+                    dout("Gonna recursively call rayColor");
+                    
+                    refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint) + 8 * eps * refractedRay, refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
                 }
             }
             
@@ -131,7 +153,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         reflectedColor = glm::clamp(reflectedColor, 0.0f, 1.0f);
         refractedColor = glm::clamp(refractedColor, 0.0f, 1.0f);
         
-        col += reflectedColor;
+        col += 0.5 * reflectedColor;
         col += refractedColor;
     }
     dout("==============ray end=================");
@@ -152,6 +174,8 @@ std::shared_ptr<IntersecInfo> hit(glm::vec3 eye, glm::vec3 pixel, GeometryNode n
     if(retInfo!=NULL){
         if(retInfo->t < min+eps){
             std::cout << retInfo->t << std::endl;
+            dout(glm::to_string(eye4), true);
+            dout(glm::to_string(ray), true);
         }
         assert(retInfo->t>min+eps);
         assert(retInfo->t<max-eps);
@@ -251,7 +275,9 @@ void render(
     for (int y = ys; y<ye; ++y) {
         
         for (int x = xs; x < xe; ++x) {
+            //showDebug = ((x<=w/2+10) && (y<=h/2+10)) && ((x>=w/2-10) && (y>=h/2-10));
             showDebug = ((x==w/2) && (y==h/2));
+            dout(std::to_string(x) + ", " + std::to_string(y));
 #ifdef RELEASE
             // clear screen
             //std::cout << "\033[2J";
