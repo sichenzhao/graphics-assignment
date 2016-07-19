@@ -295,6 +295,12 @@ void render(
                 pointOnImage -= ((float)(i%2)) * left;
                 pointOnImage -= ((float)(i/2)) * up;
                 
+                // rand from -1 to 1
+                float rand = static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX);
+                rand = rand * 2 + -1;
+                pointOnImage += 0.5f * rand * left;
+                pointOnImage += 0.5f * rand * up;
+                
                 int lightNum = (int)lights.size();
                 for (auto it = lights.begin(); it != lights.end(); it++) {
                     glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
