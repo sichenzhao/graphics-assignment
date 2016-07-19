@@ -14,6 +14,9 @@
 // important!! In order for antiAliasing works
 #define AA
 
+// important!! In order for Depth of Field works
+#define DF
+
 //static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
 

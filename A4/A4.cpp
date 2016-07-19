@@ -10,7 +10,7 @@
 
 static bool showDebug = false;
 
-#define DEBUG_Z
+//#define DEBUG_Z
 #ifdef DEBUG_Z
 #define threadNum 1
 void dout(std::string msg){
@@ -28,6 +28,8 @@ void dout(std::string msg, bool show){
 #define threadNum 10
 #define RELEASE
 void dout(std::string msg){}
+
+void dout(std::string msg, bool show){}
 #endif
 
 #define MAX_BOUNCE 5
@@ -251,6 +253,38 @@ void printColor(int x, int y, int r, int g, int b) {
 #endif
 }
 
+glm::vec3 getCol (glm::vec3 eye,
+                  glm::vec3 pointOnImage,
+                  glm::vec3 left,
+                  glm::vec3 up,
+                  Light* const* it,
+                  int lightNum,
+                  float rand,
+                  float d,
+                  
+                  // What to render
+                  SceneNode * root,
+                  
+                  const glm::vec3 & ambient) {
+#ifdef DF
+    glm::vec3 col = glm::vec3(0.0f);
+    int eyeNum = 3;
+    int focalD = 800;
+    // TODO: for testing, define focal distance here
+    // TODO: suppose camera disk radius is one
+    float cameraR = 10.0f;
+    float t = focalD / d;
+    for (int j = 0; j < eyeNum; j++) {
+        glm::vec3 randomizedEye = eye + cameraR*rand*left + cameraR*rand*up;
+        pointOnImage = eye + t * (pointOnImage - eye);
+        col += (1/((float) eyeNum)) * rayColor(randomizedEye, pointOnImage,  **it, lightNum, root, ambient, MAX_BOUNCE);
+    }
+#else
+    glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
+#endif
+    return col;
+}
+
 void render(
             const int ye,
             const int xe,
@@ -287,8 +321,14 @@ void render(
             // print percentage on (1,1)
             //std::cout << "\033\033[" << 1 << ";" << 1 << "H" << (y*w + x)*100/(h*w) << "%" << std::endl;
 #endif
+            
+            
+            float rand = static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX);
+            rand = rand * 2 + -1;
       
+            up = glm::normalize(up);
             left = glm::normalize(left);
+            
 #ifdef AA
             for (int i = 0; i < 4; i++) {
                 glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*left;
@@ -296,14 +336,12 @@ void render(
                 pointOnImage -= ((float)(i/2)) * up;
                 
                 // rand from -1 to 1
-                float rand = static_cast <float> (std::rand()) / static_cast <float> (RAND_MAX);
-                rand = rand * 2 + -1;
                 pointOnImage += 0.5f * rand * left;
                 pointOnImage += 0.5f * rand * up;
                 
                 int lightNum = (int)lights.size();
                 for (auto it = lights.begin(); it != lights.end(); it++) {
-                    glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
+                    glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, d, root, ambient);
                     col = 0.25f * col;
                     //printColor(x, y, col.x, col.y, col.z);
                     image(x,y,0) += col.x;
@@ -317,13 +355,14 @@ void render(
             
             int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {
-                glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
+                glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, root, ambient);
                 //printColor(x, y, col.x, col.y, col.z);
                 image(x,y,0) += col.x;
                 image(x,y,1) += col.y;
                 image(x,y,2) += col.z;
             }
 #endif
+                
             image(x,y,0) = std::min(1.0, image(x,y,0));
             image(x,y,1) = std::min(1.0, image(x,y,1));
             image(x,y,2) = std::min(1.0, image(x,y,2));

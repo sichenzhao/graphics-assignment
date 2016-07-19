@@ -28,6 +28,20 @@ void A4_Render(
 		const std::list<Light *> & lights
 );
 
+glm::vec3 getCol (glm::vec3 eye,
+                  glm::vec3 pointOnImage,
+                  glm::vec3 left,
+                  glm::vec3 up,
+                  Light * const* it,
+                  int lightNum,
+                  float rand,
+                  float d,
+                  
+                  // What to render
+                  SceneNode * root,
+                  
+                  const glm::vec3 & ambient);
+
 void render(const int ye,
             const int xe,
             const int ys,
