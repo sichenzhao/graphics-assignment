@@ -25,14 +25,14 @@ void dout(std::string msg, bool show){
     }
 }
 #else
-#define threadNum 10
+#define threadNum 20
 #define RELEASE
 void dout(std::string msg){}
 
 void dout(std::string msg, bool show){}
 #endif
 
-#define MAX_BOUNCE 5
+#define MAX_BOUNCE 8
 
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce){
     dout("==============ray start=================");
@@ -82,7 +82,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             col += directLight(hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v), glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
-            if (!hitInfo->mat->isMirror) {
+            if ((!hitInfo->mat->isMirror) && (!hitInfo->mat->isTrans)) {
                 col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
             }
         }
@@ -273,7 +273,7 @@ glm::vec3 getCol (glm::vec3 eye,
     int eyeNum = 3;
     // TODO: for testing, define focal distance here
     // TODO: suppose camera disk radius is one
-    float cameraR = 10.0f;
+    float cameraR = 0.0010f;
     float t = focalD / d;
     for (int j = 0; j < eyeNum; j++) {
         glm::vec3 randomizedEye = eye + cameraR*rand*left + cameraR*rand*up;

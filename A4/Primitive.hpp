@@ -6,7 +6,7 @@
 #include "PhongMaterial.hpp"
 
 // important!! In order for grid to work, cannot be changed
-#define BV
+//#define BV
 
 // important!! In order for mirror reflection
 #define MR

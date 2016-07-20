@@ -1,0 +1,70 @@
+-- final scene of project
+
+stone = gr.material({0.8, 0.7, 0.7}, {0.0, 0.0, 0.0}, 0)
+grass = gr.material({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 0)
+hide = gr.material({0.84, 0.6, 0.53}, {0.3, 0.3, 0.3}, 20)
+
+transp = gr.material({0, 0, 0}, {0.9, 0.9, 0.9}, 0)
+
+-- square window
+w_set = gr.node('wset')
+
+window = gr.nh_box('window', {0,0,0}, 1)
+w_set:add_child(window)
+window:set_material(transp)
+window:set_transparent(1.5)
+window:scale(10,3,1/100)
+window:translate(0,0,-10)
+
+w1 = gr.nh_box('w1', {0,0,0}, 1)
+w_set:add_child(w1)
+w1:set_material(grass)
+w1:scale(10,1,1/100)
+w1:translate(0,-1,-10)
+--w1:translate(-2.5, -2.5, -10)
+
+w2 = gr.nh_box('w2', {0,0,0}, 1)
+w_set:add_child(w2)
+w2:set_material(grass)
+w2:scale(10,1,1/100)
+w2:translate(0,3,-10)
+--w2:translate(-2.5,2.5,-10)
+
+-- ##############################################
+-- the scene
+-- ##############################################
+
+scene = gr.node('scene')
+--scene:rotate('X', 23)
+--scene:translate(0, -2, -15)
+
+scene:add_child(w_set)
+
+for i = 1, 6 do
+    a_w_set = gr.node('w_set' .. tostring(i))
+    a_w_set:rotate('Z', (i-1) * 60)
+--    scene:add_child(a_w_set)
+    a_w_set:add_child(w_set)
+end
+
+--scene:add_child(window)
+--scene:add_child(w1)
+--scene:add_child(w2)
+
+selfR = 90
+earthR = 150
+--earthR = 5
+-- THE EARTH
+s4 = gr.sphere('s4')
+--scene:add_child(s4)
+s4:tm_set_material(stone, "real_earth.png")
+s4:scale(earthR,earthR,earthR)
+s4:rotate('Z', 180)
+s4:rotate('Y',selfR)
+s4:translate(-earthR/1.414,-earthR/1.414,-1.5*earthR)
+
+
+gr.render(scene,
+	  'final_scene_final.png', 256, 256,
+	  {0, 0, 0}, {0, 0, -1}, {0, 1, 0}, 50,
+	  {0.4, 0.4, 0.4}, {gr.light({3000, 3000, 10000}, {1, 1, 1}, {1, 0, 0})})

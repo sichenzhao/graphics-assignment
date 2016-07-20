@@ -1,12 +1,12 @@
 -- test for hierarchical ray-tracers.
 -- Thomas Pflaum 1996
 
-tm1 = gr.material({0.9, 0.8, 0.4}, {0.4, 0.4, 0.4}, 25)
-tm2 = gr.material({0.9, 0.8, 0.4}, {0.4, 0.4, 0.4}, 25)
-tm3 = gr.material({0.9, 0.8, 0.4}, {0.4, 0.4, 0.4}, 25)
-tm4 = gr.material({0.9, 0.8, 0.4}, {0.4, 0.4, 0.4}, 25)
+tm1 = gr.material({0.9, 0.8, 0.4}, {0.2, 0.2, 0.2}, 25)
+tm2 = gr.material({0.9, 0.8, 0.4}, {0.2, 0.2, 0.2}, 25)
+tm3 = gr.material({0.9, 0.8, 0.4}, {0.2, 0.2, 0.2}, 25)
+tm4 = gr.material({0.9, 0.8, 0.4}, {0.2, 0.2, 0.2}, 25)
 
-grass = gr.material({0.1, 0.7, 0.1}, {0.0, 0.0, 0.0}, 0)
+grass = gr.material({80/255, 168/255, 227/255}, {0.05, 0.05, 0.2}}, 0)
 blue = gr.material({0.7, 0.6, 1}, {0.5, 0.4, 0.8}, 25)
 
 scene = gr.node('scene')
