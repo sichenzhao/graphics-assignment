@@ -329,9 +329,9 @@ void render(
             up = glm::normalize(up);
             left = glm::normalize(left);
             
+            float focalD = sqrt(glm::dot(view - eye, view - eye));
 #ifdef AA
             for (int i = 0; i < 4; i++) {
-                float focalD = sqrt(glm::dot(view - eye, view - eye));
                 glm::vec3 pointOnImage = eye + d*glm::normalize((view - eye)) + (h/2 - y)*glm::normalize(up) + (w/2 - x)*left;
                 pointOnImage -= ((float)(i%2)) * left;
                 pointOnImage -= ((float)(i/2)) * up;
@@ -356,7 +356,7 @@ void render(
             
             int lightNum = (int)lights.size();
             for (auto it = lights.begin(); it != lights.end(); it++) {
-                glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, root, ambient);
+                glm::vec3 col = getCol(eye, pointOnImage, left, up, &(*it), lightNum, rand, d, focalD, root, ambient);
                 //printColor(x, y, col.x, col.y, col.z);
                 image(x,y,0) += col.x;
                 image(x,y,1) += col.y;

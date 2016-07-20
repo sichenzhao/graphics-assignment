@@ -9,13 +9,13 @@
 #define BV
 
 // important!! In order for mirror reflection
-#define MR
+//#define MR
 
 // important!! In order for antiAliasing works
-#define AA
+//#define AA
 
 // important!! In order for Depth of Field works
-#define DF
+//#define DF
 
 //static const float inff = std::numeric_limits<float>::infinity();
 static const double infd = std::numeric_limits<double>::infinity();
