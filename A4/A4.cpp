@@ -82,8 +82,9 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
             col += directLight(hitInfo->mat->get_m_kd(hitInfo->u, hitInfo->v), glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff);
             
             // specular
-            
-            col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
+            if (!hitInfo->mat->isMirror) {
+                col += indirectLight(hitInfo->mat->m_ks, glm::vec3(hitInfo->hitPoint), glm::vec3(hitInfo->normal), light.position, light.colour * falloff, eye, hitInfo->mat->m_shininess);
+            }
         }
         
         // recursive mirror specular
@@ -157,7 +158,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         reflectedColor = glm::clamp(reflectedColor, 0.0f, 1.0f);
         refractedColor = glm::clamp(refractedColor, 0.0f, 1.0f);
         
-        col += 0.5 * reflectedColor;
+        col += reflectedColor;
         col += refractedColor;
     }
     dout("==============ray end=================");

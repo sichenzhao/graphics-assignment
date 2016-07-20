@@ -10,6 +10,7 @@ PhongMaterial::PhongMaterial(
     , height(0)
     , isTrans(false)
     , transInd(-1)
+    , isMirror(false)
 {}
 
 PhongMaterial::~PhongMaterial()
@@ -30,4 +31,8 @@ glm::vec3 PhongMaterial::get_m_kd(double x, double y){
 void PhongMaterial::setTransparent(bool val, double index) {
     isTrans = val;
     transInd = index;
+}
+
+void PhongMaterial::setMirror(){
+    isMirror = true;
 }

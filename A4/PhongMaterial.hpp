@@ -21,5 +21,8 @@ public:
     double transInd;
     void setTransparent(bool val, double transInd);
     
+    bool isMirror;
+    void setMirror();
+    
     double m_shininess;
 };

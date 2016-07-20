@@ -9,7 +9,7 @@
 #define BV
 
 // important!! In order for mirror reflection
-//#define MR
+#define MR
 
 // important!! In order for antiAliasing works
 //#define AA
