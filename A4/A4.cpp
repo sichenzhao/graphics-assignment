@@ -40,7 +40,11 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
     if (maxBounce<=0 || isnan(pixelPoint.x)) {
         return glm::vec3(0.0);
     }
+#ifdef DF
+    glm::vec3 col = glm::vec3(0.0);
+#else
     glm::vec3 col = glm::vec3(-1.0);
+#endif
     if (maxBounce != MAX_BOUNCE) {
         col = glm::vec3(0.0);
     }
@@ -289,16 +293,18 @@ glm::vec3 getCol (glm::vec3 eye,
                   const glm::vec3 & ambient) {
 #ifdef DF
     glm::vec3 col = glm::vec3(0.0f);
-    int eyeNum = 3;
+    int eyeNum = 100;
     // TODO: for testing, define focal distance here
     // TODO: suppose camera disk radius is one
-    float cameraR = 0.0010f;
+    float cameraR = 1.0f;
     float t = focalD / d;
+    glm::vec3 pointOnFocal = glm::vec3(0.0f);
     for (int j = 0; j < eyeNum; j++) {
         glm::vec3 randomizedEye = eye + cameraR*rand*left + cameraR*rand*up;
-        pointOnImage = eye + t * (pointOnImage - eye);
-        col += (1/((float) eyeNum)) * rayColor(randomizedEye, pointOnImage,  **it, lightNum, root, ambient, MAX_BOUNCE);
+        pointOnFocal = eye + t * (pointOnImage - eye);
+        col += rayColor(randomizedEye, pointOnFocal,  **it, lightNum, root, ambient, MAX_BOUNCE);
     }
+    col = (1/((float) eyeNum)) * col;
 #else
     glm::vec3 col = rayColor(eye, pointOnImage, **it, lightNum, root, ambient, MAX_BOUNCE);
 #endif
