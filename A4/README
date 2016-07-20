@@ -44,3 +44,9 @@ Additional little improvements are --
         3. Multithreading on ray tracing
 
 Bug: 
+        1. Refraction not working correctly for sphere/ellipsoid/elliptic cone
+        2. Grid Acceleration have error for some pixels in specific area when rendering
+                e.g. showing lines on mesh
+        3. Depth of Field Disk Camera radius and Focal distance need to be chosen 
+        very carefully inorder to see a fair effects.
+
