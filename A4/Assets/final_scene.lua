@@ -24,7 +24,7 @@ w_set:rotate('X', 30)
 w_set:translate(-1.5,3,0)
 
 window = gr.nh_box('window', {0,0,0}, 1)
-w_set:add_child(window)
+--w_set:add_child(window)
 window:set_material(transp)
 window:set_transparent(1.5)
 window:scale(3,3,1/100)

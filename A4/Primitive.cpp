@@ -103,7 +103,6 @@ std::shared_ptr<IntersecInfo> EllipticCone::intersect(glm::vec4 eye, glm::vec4 r
         lt = std::min(roots[0], roots[1]);
         if(lt <= appMin + eps){
             lt = std::max(roots[0], roots[1]);
-            hitIn = false;
         }
     }
     

@@ -38,6 +38,17 @@ My ten objectives are --
   I implemented 1/2/3/4/7/8/9/10 while 5 and 6 are not implemented.
   Bugs about implementation will be covered in Bug section below.
 
+There are 4 flags to control some parts of rendering functionality:
+        1. BV    -- bounding volume
+        2. GRID  -- grid acceleration for mesh
+        3. MR    -- mirror reflection enable
+        4. AA    -- anti-aliasing random jittering
+        5. DF    -- depth of field
+
+        by default, BV and MR are defined, the reset are not
+        You can enable/disable any of these features by editing Primitive.hpp
+or by changing Makefile and defining those while compiling.
+
 Additional little improvements are --
         1. Webpage organized all rendered images
         2. Little animation using multiple pngs

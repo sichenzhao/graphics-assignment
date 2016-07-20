@@ -52,10 +52,11 @@ std::shared_ptr<IntersecInfo> Mesh::intersect(glm::vec4 primaryPoint, glm::vec4 
     //else {
     //    return bvbInfo;
     //}
-    
+#ifdef GRID
     if(m_faces.size() > 5){
         return grid.intersect(primaryPoint, primaryRay, bvbInfo->t, anotherT, bvbInfo->hitIn, min, max);
     }
+#endif
 #endif
     bool hitIn = true;
     bool mBool = false;

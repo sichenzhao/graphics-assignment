@@ -113,7 +113,7 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
         //}
 
         //float reflectedPortion = 0.5;
-        float reflectedPortion = 0;
+        float reflectedPortion = 0.5;
         if (hitInfo->mat->isTrans) {
             
             // calculate refracted ray direction
@@ -127,7 +127,8 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
                     reflectedPortion = 1;
                 } else {
                     // calculate refracted color
-                    glm::vec3 refractedRay = eta * r_primaryRay - eta * (dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
+                    // glm::vec3 refractedRay = eta * r_primaryRay - eta * (dot(r_normalVec, r_primaryRay) + sqrt(k)) * r_normalVec;
+                    glm::vec3 refractedRay = eta * (-r_primaryRay - glm::dot(-r_primaryRay, r_normalVec)*r_normalVec) - sqrt(k) * r_normalVec;
                     
                     int errorAv = 10;
                     
@@ -140,6 +141,24 @@ glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNu
                     dout("Gonna recursively call rayColor");
                     
                     refractedColor = hitInfo->mat->m_ks * rayColor(glm::vec3(hitInfo->hitPoint) + errorAv * eps * refractedRay, refractedRay + glm::vec3(hitInfo->hitPoint), light, lightNum, root, ambient, maxBounce-1);
+                    
+                    float csi, cst;
+                    csi = glm::dot(-r_primaryRay, r_normalVec);
+                    cst = glm::dot(glm::normalize(refractedRay), -r_normalVec);
+                    
+                    float r1, r2;
+                    r1 = r2 = 1;
+                    r1 = (eta*csi - cst)/(eta*csi + cst);
+                    r2 = (csi - eta*cst)/(csi + eta*cst);
+                    
+                    reflectedPortion = r1*r1 + r2*r2;
+                    reflectedPortion *= 0.5;
+                    
+                    /**
+                    float csi = glm::dot(-r_primaryRay, r_normalVec);
+                    float r1 = (eta - 1)*(eta - 1)/((eta + 1)*(eta + 1));
+                     reflectedPortion = r1 + (1 - r1)*(pow(1-csi, 5));
+                     **/
                 }
             }
             
