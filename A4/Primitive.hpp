@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include "Material.hpp"
 #include "PhongMaterial.hpp"
+#include <memory>
 
 // important!! In order for grid to work, cannot be changed
 #define BV
