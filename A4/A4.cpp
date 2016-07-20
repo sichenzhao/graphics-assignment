@@ -32,7 +32,7 @@ void dout(std::string msg){}
 void dout(std::string msg, bool show){}
 #endif
 
-#define MAX_BOUNCE 8
+#define MAX_BOUNCE 5
 
 glm::vec3 rayColor(glm::vec3 eye, glm::vec3 pixelPoint, Light light, int lightNum, SceneNode* root, const glm::vec3 & ambient, const int maxBounce){
     dout("==============ray start=================");
