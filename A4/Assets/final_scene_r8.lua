@@ -15,7 +15,7 @@ green = gr.material({204/255, 255/255, 0/255},{0,0,0},20)
 transp = gr.material({0, 0, 0}, {0.9, 0.9, 0.9}, 0)
 mirror = gr.material({0.0, 0.0, 0.0}, {0.9, 0.9, 0.9}, 0)
 
-earthR = 150+8*5
+earthR = 150
 
 wall_set = gr.node('wall_set')
 wall_set:translate(0,0,-13)
@@ -133,7 +133,7 @@ end
 --scene:add_child(w1)
 --scene:add_child(w2)
 
-selfR = 90
+selfR = 90+8*5
 --earthR = 5
 -- THE EARTH
 e = gr.sphere('e')

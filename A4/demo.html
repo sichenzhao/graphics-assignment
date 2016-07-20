@@ -138,11 +138,33 @@
                 </div>
                 <div class="col-md-6 portfolio-item">
                     <p><b>The Tenth objective:</b> Final Scene</p>
-                        <img class="img-responsive" src="final_scene.png" alt="">
+                        <img class="img-responsive" src="final_scene_final.png" alt="">
                     <h3>
 
                     </h3>
                 </div>
+                <div class="col-md-6 portfolio-item">
+                    <p><b>A Little Fun:</b> Final Scene Animation</p>
+                    <button onclick="myMove()">Click Me</button>
+                        <img class="img-responsive" id = "myAnimation" src="final_scene_r0.png" alt="">
+                    <h3>
+
+                    </h3>
+                </div>
+                <script>
+                    function myMove() {
+                        var elem = document.getElementById("myAnimation");   
+                        var i = 0;
+                        var id = setInterval(frame, 150);
+                        function frame() {
+                            elem.src="final_scene_r"+i+".png";
+                            i = i+1;
+                            if(i==11){
+                                i = 0;
+                            }
+                        }
+                    }
+                </script>
             </div>
 
 
