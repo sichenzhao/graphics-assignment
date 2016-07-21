@@ -57,6 +57,6 @@ plane:rotate('X', 90)
 white_light = gr.light({-100.0, 150.0, 400.0}, {0.8, 0.8, 0.8}, {1, 0, 0})
 --orange_light = gr.light({400.0, 100.0, 150.0}, {0.7, 0.0, 0.7}, {1, 0, 0})
 
-gr.render(scene_root, 'obj4-sphere.png', 256, 256,
+gr.render(scene_root, 'obj4-sphere.png', 1024, 1024,
 	  {0, 0, 800}, {0, 0, -800}, {0, 1, 0}, 50,
 	  {0.3, 0.3, 0.3}, {white_light})
